@@ -1,0 +1,3001 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ app_name }}</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap");
+
+      :root {
+        --bg: #ffffff;
+        --panel: #ffffff;
+        --panel-strong: #ffffff;
+        --ink: #12202a;
+        --muted: #5d6e7d;
+        --accent: #0d7a72;
+        --accent-strong: #085f59;
+        --accent-soft: rgba(13, 122, 114, 0.14);
+        --focus: #c67910;
+        --focus-strong: #9d5e08;
+        --focus-soft: rgba(198, 121, 16, 0.17);
+        --neutral-chip: rgba(18, 32, 42, 0.06);
+        --neutral-chip-line: rgba(18, 32, 42, 0.1);
+        --sentiment-chip: rgba(71, 90, 109, 0.12);
+        --ok: #0d7a72;
+        --ok-soft: rgba(13, 122, 114, 0.12);
+        --hold: #8a5b24;
+        --hold-soft: rgba(138, 91, 36, 0.15);
+        --line: rgba(18, 32, 42, 0.11);
+        --shadow: 0 14px 32px rgba(18, 32, 42, 0.07);
+        --hero-tint: linear-gradient(135deg, rgba(13, 122, 114, 0.08), rgba(255, 255, 255, 0.99));
+        --summary-tint: linear-gradient(135deg, rgba(13, 122, 114, 0.08), rgba(198, 121, 16, 0.08), rgba(255, 255, 255, 0.98));
+        --panel-tint: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(246, 250, 250, 0.96));
+      }
+
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(13, 122, 114, 0.08), transparent 24%),
+          linear-gradient(180deg, #ffffff 0%, #f7fbfb 100%);
+      }
+      button, input { font: inherit; }
+
+      .wrap {
+        max-width: 1500px;
+        margin: 0 auto;
+        padding: 10px;
+        min-height: 100vh;
+        display: block;
+        overflow: visible;
+      }
+
+      .headline-band {
+        display: grid;
+        grid-template-columns: minmax(300px, 0.62fr) minmax(660px, 1.38fr);
+        gap: 12px;
+        align-items: stretch;
+        margin-bottom: 14px;
+      }
+      .topbar {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        align-items: stretch;
+        min-height: 0;
+      }
+
+      .project-intro,
+      .hero,
+      .summary-panel,
+      .shell-panel,
+      .detail-panel,
+      .list-panel {
+        background: var(--panel-tint);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+
+      /* .hero {
+        padding: 16px 18px;
+        background:
+          radial-gradient(circle at top left, rgba(13, 122, 114, 0.12), transparent 42%),
+          linear-gradient(135deg, rgba(255,255,255,0.98), rgba(242, 250, 249, 0.98));
+        min-height: 132px;
+        position: relative;
+        overflow: hidden;
+      } */
+       .hero {
+        padding: 20px 18px 18px;
+        background:
+          radial-gradient(circle at top left, rgba(13, 122, 114, 0.12), transparent 42%),
+          linear-gradient(135deg, rgba(255,255,255,0.98), rgba(242, 250, 249, 0.98));
+        min-height: 132px;
+        position: relative;
+        overflow: hidden;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        text-align: center;
+        transform: translateY(-1px);
+      }
+
+      .project-intro {
+        padding: 24px 22px 20px;
+        background:
+          radial-gradient(circle at top left, rgba(13, 122, 114, 0.12), transparent 42%),
+          linear-gradient(135deg, rgba(255,255,255,0.98), rgba(242, 250, 249, 0.98));
+        min-height: 208px;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      .compact-hero {
+        padding: 16px 18px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .hero-section-title {
+        margin-bottom: 0;
+      }
+      .hero-section-title h2 {
+        font-size: 1.02rem;
+        font-weight: 900;
+      }
+      .intro-meta {
+        margin-top: 14px;
+        justify-content: center;
+      }
+      .project-stat-row {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .project-stat {
+        min-height: 78px;
+        padding: 10px 11px;
+      }
+      .summary-panel {
+        display: grid;
+        grid-template-columns: 170px minmax(0, 1fr);
+        column-gap: 10px;
+        row-gap: 0;
+        padding: 12px 12px 10px;
+        background: var(--summary-tint);
+        min-height: 0;
+        overflow: hidden;
+        align-items: stretch;
+      }
+      .evidence-panel {
+        background: var(--summary-tint);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+        padding: 16px;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        gap: 12px;
+        overflow: hidden;
+        min-height: 470px;
+      }
+      .evidence-head {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        margin-bottom: 2px;
+      }
+      .evidence-title {
+        width: 100%;
+        text-align: center;
+      }
+      .evidence-title .eyebrow {
+        font-size: 1.04rem;
+        font-weight: 900;
+        letter-spacing: 0.14em;
+      }
+      .evidence-layout {
+        display: grid;
+        grid-template-columns: minmax(230px, 0.72fr) minmax(190px, 0.58fr) minmax(0, 1.7fr);
+        gap: 10px;
+        align-items: stretch;
+      }
+      .evidence-side {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        min-width: 0;
+        height: 100%;
+      }
+      .evidence-block {
+        background: rgba(255,255,255,0.86);
+        border: 1px solid rgba(200, 211, 218, 0.82);
+        border-radius: 16px;
+        padding: 10px;
+        min-width: 0;
+        overflow: hidden;
+        height: 90%;
+      }
+      .funnel-shell {
+        background: rgba(255,255,255,0.86);
+        border: 1px solid rgba(200, 211, 218, 0.82);
+        border-radius: 16px;
+        padding: 10px;
+        box-shadow: none;
+      }
+      .evidence-block h3 {
+        font-size: 1.02rem;
+        font-weight: 900;
+        color: var(--accent);
+        margin-bottom: 8px;
+        text-align: center;
+      }
+      .evidence-panel .signal-strip {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        height: 100%;
+        align-content: stretch;
+      }
+      .evidence-panel .signal-card {
+        min-height: 0;
+        width: 78%;
+        justify-self: center;
+        align-self: stretch;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .evidence-panel .summary-inline-funnel {
+        margin-top: 0;
+        min-height: 100%;
+        height: 100%;
+      }
+      .evidence-panel .summary-card {
+        height: 90%;
+        align-self: stretch;
+      }
+      .summary-side {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 8px;
+        min-height: 100%;
+        height: 100%;
+        align-self: stretch;
+      }
+      .hero::after {
+        content: "";
+        position: absolute;
+        inset: auto -40px -40px auto;
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(198,121,16,0.12), transparent 60%);
+        pointer-events: none;
+      }
+
+      .eyebrow {
+        font-family: "Helvetica Neue", sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: var(--accent);
+      }
+
+      h1, h2, h3, h4, p { margin: 0; }
+      .brand-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        justify-content: flex-start;
+        margin-left: -6px;
+      }
+      .brand-icon {
+        width: 52px;
+        height: 52px;
+        object-fit: contain;
+        filter: drop-shadow(0 8px 18px rgba(18, 32, 42, 0.08));
+        flex: 0 0 auto;
+      }
+      h1 {
+        font-family: "Fraunces", "Times New Roman", serif;
+        font-size: clamp(1.84rem, 3vw, 2.78rem);
+        line-height: 0.9;
+        margin-top: 4px;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        text-shadow: 0 10px 24px rgba(18, 32, 42, 0.08);
+      }
+      h2 {
+        font-size: 1.06rem;
+        line-height: 1.1;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      h3 {
+        font-size: 0.92rem;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+      h4 {
+        font-size: 0.92rem;
+        color: var(--accent);
+        letter-spacing: -0.01em;
+        font-weight: 900;
+        text-align: center;
+      }
+
+      .subtitle {
+        margin-top: 10px;
+        max-width: 460px;
+        color: var(--muted);
+        font-size: 0.68rem;
+        line-height: 1.28;
+      }
+      .hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 14px;
+        justify-content: center;
+      }
+      .hero-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 8px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.82);
+        border: 1px solid rgba(18, 32, 42, 0.08);
+        font-size: 0.69rem;
+        font-weight: 800;
+        color: var(--muted);
+      }
+      .hero-dashboard-group {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 13px;
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+      .signal-strip {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 9px;
+        margin-top: 0;
+        width: 100%;
+      }
+      .signal-card {
+        padding: 11px 12px;
+        border-radius: 15px;
+        background: rgba(255,255,255,0.92);
+        border: 1px solid rgba(18,32,42,0.08);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4);
+      }
+      .signal-card strong {
+        display: block;
+        font-size: 0.82rem;
+        font-weight: 900;
+        color: var(--accent);
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .signal-card span {
+        display: block;
+        margin-top: 3px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: var(--ink);
+      }
+      .signal-card small {
+        display: block;
+        margin-top: 3px;
+        font-size: 0.72rem;
+        color: var(--muted);
+        line-height: 1.2;
+      }
+      .hero-sentiment-wrap {
+        display: grid;
+        grid-template-columns: 62px 1fr;
+        gap: 8px;
+        align-items: center;
+      }
+      .hero-sentiment-legend {
+        display: grid;
+        gap: 3px;
+        font-size: 0.62rem;
+        color: var(--muted);
+        font-weight: 800;
+        line-height: 1.2;
+      }
+      .hero-sentiment-legend span {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .hero-sentiment-legend i {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+      .hero-sentiment-donut {
+        width: 62px;
+        height: 62px;
+        border-radius: 50%;
+        position: relative;
+        background: conic-gradient(
+          #d6891f 0deg var(--hero-neg-angle, 0deg),
+          #577489 var(--hero-neg-angle, 0deg) var(--hero-neu-angle, 0deg),
+          #0d7a72 var(--hero-neu-angle, 0deg) var(--hero-pos-angle, 0deg),
+          #8f6a2a var(--hero-pos-angle, 0deg) 360deg
+        );
+      }
+      .hero-sentiment-donut::after {
+        content: "";
+        position: absolute;
+        inset: 12px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 1px solid rgba(18,32,42,0.08);
+      }
+      .hero-sentiment-center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1px;
+        z-index: 1;
+      }
+      .hero-sentiment-center span {
+        font-size: 0.78rem;
+        font-weight: 900;
+      }
+
+      .hero-stat-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 9px;
+        margin-top: 0;
+        width: 100%;
+      }
+
+      .hero-stat {
+        padding: 11px 12px;
+        border-radius: 15px;
+        border: 1px solid rgba(18, 32, 42, 0.08);
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4);
+      }
+      .hero-stat-label {
+        font-size: 0.63rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        font-family: "Helvetica Neue", sans-serif;
+        font-weight: 700;
+      }
+      .hero-stat-value {
+        margin-top: 3px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .hero-stat-sub {
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 0.72rem;
+        line-height: 1.2;
+      }
+
+      .summary-head {
+        display: grid;
+        align-content: start;
+        justify-content: start;
+        gap: 4px;
+        padding: 8px 4px 0 2px;
+        height: 88px;
+        align-self: start;
+        flex: 0 0 auto;
+      }
+      .summary-copy {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 0.74rem;
+        line-height: 1.45;
+        max-width: 500px;
+      }
+
+      .summary-inline-funnel {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        align-self: stretch;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+        margin-top: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        border-radius: 0;
+        gap: 12px;
+      }
+      .summary-funnel-title {
+        font-size: 1.02rem;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        text-transform: none;
+        color: var(--accent);
+        margin-bottom: 10px;
+        text-align: center;
+      }
+      .summary-mix-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 0;
+        align-items: stretch;
+        align-content: start;
+      }
+
+      .summary-card {
+        border-radius: 16px;
+        border: 1px solid rgba(18, 32, 42, 0.08);
+        background: rgba(255, 255, 255, 0.92);
+        padding: 10px;
+        min-height: 0;
+        height: 100%;
+        display: block;
+        align-self: stretch;
+        justify-self: stretch;
+        margin-top: 0;
+        min-width: 0;
+        overflow: hidden;
+      }
+      .summary-card-inner {
+        width: 100%;
+        display: block;
+        align-content: start;
+        min-width: 0;
+        overflow: hidden;
+      }
+      .summary-card.compact { display: grid; gap: 8px; }
+      .summary-card.compact.combined { grid-template-rows: auto auto; }
+      .brief-band {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .brief-pill {
+        padding: 8px 9px;
+        border-radius: 13px;
+        border: 1px solid rgba(18, 32, 42, 0.08);
+        background: rgba(255,255,255,0.88);
+      }
+      .brief-pill strong {
+        display: block;
+        font-size: 0.65rem;
+        color: var(--muted);
+        font-weight: 800;
+      }
+      .brief-pill span {
+        display: block;
+        margin-top: 4px;
+        font-size: 0.78rem;
+        font-weight: 900;
+        line-height: 1.2;
+      }
+      .brief-text {
+        font-size: 0.81rem;
+        line-height: 1.42;
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .summary-visual-grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 8px;
+        min-width: 0;
+        align-items: stretch;
+        align-content: start;
+      }
+      .summary-chart-card {
+        padding: 10px;
+        border-radius: 15px;
+        border: 1px solid rgba(18, 32, 42, 0.08);
+        background: rgba(255,255,255,0.9);
+        min-height: 300px;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        overflow: hidden;
+      }
+      .summary-chart-card.flow-card {
+        background: linear-gradient(180deg, rgba(242, 248, 255, 0.96), rgba(255, 255, 255, 0.98));
+        border-color: rgba(84, 132, 195, 0.18);
+      }
+      .summary-chart-card.signal-card {
+        background: linear-gradient(180deg, rgba(241, 252, 250, 0.96), rgba(255, 255, 255, 0.98));
+        border-color: rgba(13, 122, 114, 0.16);
+      }
+      .summary-chart-card h4,
+      .distribution-card h4 {
+        margin-bottom: 8px;
+        font-size: 0.76rem;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        text-transform: none;
+        color: var(--accent);
+      }
+
+      .summary-funnel-strip {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        height: 100%;
+        min-height: 0;
+        align-content: stretch;
+      }
+
+      .summary-funnel-card {
+        padding: 5px 7px;
+        border-radius: 12px;
+        border: 1px solid rgba(18,32,42,0.08);
+        background: rgba(255,255,255,0.9);
+        position: relative;
+        overflow: hidden;
+        min-height: 0;
+        height: 88%;
+        width: 88%;
+        justify-self: center;
+        align-self: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+        box-sizing: border-box;
+      }
+      .summary-funnel-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: var(--step-width, 100%);
+        background: linear-gradient(90deg, rgba(45,110,179,0.10), rgba(13,122,114,0.08));
+      }
+      .summary-funnel-card.hold-step::before {
+        background: linear-gradient(90deg, rgba(214,137,31,0.14), rgba(143,106,42,0.08));
+      }
+      .summary-funnel-card.collect-step {
+        background: linear-gradient(180deg, rgba(243, 248, 255, 0.96), rgba(255,255,255,0.98));
+      }
+      .summary-funnel-card.cluster-step {
+        background: linear-gradient(180deg, rgba(241, 252, 250, 0.96), rgba(255,255,255,0.98));
+      }
+      .summary-funnel-card.ready-step {
+        background: linear-gradient(180deg, rgba(243, 250, 248, 0.96), rgba(255,255,255,0.98));
+      }
+      .summary-funnel-card.hold-step {
+        background: linear-gradient(180deg, rgba(255, 249, 239, 0.98), rgba(255,255,255,0.98));
+      }
+      .summary-funnel-card > * {
+        position: relative;
+        z-index: 1;
+      }
+      .summary-funnel-card.loading-placeholder {
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 44px;
+      }
+      .summary-funnel-card.loading-placeholder::before {
+        width: 100%;
+        background: linear-gradient(90deg, rgba(45,110,179,0.06), rgba(13,122,114,0.04));
+      }
+      .summary-funnel-inline {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+        flex-wrap: nowrap;
+      }
+      .summary-funnel-card strong {
+        font-size: 0.6rem;
+        line-height: 1.2;
+      }
+
+      .summary-funnel-card span {
+        margin-top: 0;
+        font-size: 0.72rem;
+        line-height: 1.2;
+      }
+
+      .summary-funnel-card small {
+        margin-top: 2px;
+        font-size: 0.58rem;
+        white-space: nowrap;
+        line-height: 1.15;
+      }
+      #funnel-meta {
+        min-height: 42px;
+        font-size: 0.58rem;
+        line-height: 1.45;
+        align-self: end;
+      }
+
+      .distribution-card {
+        padding: 12px 14px;
+        border-radius: 15px;
+        border: 1px solid rgba(18, 32, 42, 0.08);
+        background: rgba(255,255,255,0.9);
+        height: 136px;
+        margin-bottom: 0;
+      }
+      .summary-chart-card h4,
+      .distribution-card h4 {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .distribution-card.policy-card {
+        background: linear-gradient(180deg, rgba(244, 248, 253, 0.96), rgba(255,255,255,0.98));
+        border-color: rgba(87, 116, 137, 0.18);
+      }
+      .distribution-card.market-card {
+        background: linear-gradient(180deg, rgba(255, 249, 241, 0.96), rgba(255,255,255,0.98));
+        border-color: rgba(214, 137, 31, 0.16);
+      }
+      .distribution-top {
+        display: grid;
+        grid-template-columns: 72px 1fr;
+        gap: 14px;
+        align-items: center;
+        margin-top: 8px;
+      }
+      .mini-donut {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        position: relative;
+        opacity: 0;
+      }
+      .mini-donut.is-ready {
+        opacity: 1;
+      }
+
+      .mini-donut::after {
+        content: "";
+        position: absolute;
+        inset: 13px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 1px solid rgba(18, 32, 42, 0.08);
+      }
+      .mini-donut-center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1px;
+        z-index: 1;
+        text-align: center;
+        transform: translateY(0);
+      }
+      .mini-donut-center strong {
+        font-size: 0.78rem;
+        font-weight: 900;
+      }
+
+      .mini-donut-center span {
+        font-size: 0.56rem;
+        color: var(--muted);
+        font-weight: 800;
+      }
+      .mini-donut-center:not(.is-ready) {
+        opacity: 0;
+      }
+      .mini-donut-center.is-ready {
+        opacity: 1;
+      }
+      .distribution-legend {
+        display: grid;
+        gap: 5px;
+      }
+      .distribution-row {
+        display: grid;
+        grid-template-columns: 42px 1fr 24px;
+        gap: 8px;
+        align-items: center;
+      }
+      .distribution-row label {
+        font-size: 0.66rem;
+        color: var(--muted);
+        font-weight: 800;
+      }
+
+      .distribution-rail {
+        position: relative;
+        height: 7px;
+        border-radius: 999px;
+        background: rgba(18,32,42,0.08);
+        overflow: hidden;
+      }
+      .distribution-rail span {
+        position: absolute;
+        inset: 0 auto 0 0;
+        border-radius: inherit;
+      }
+      .summary-activity-chart {
+        width: 88%;
+        height: auto;
+        aspect-ratio: 320 / 160;
+        max-height: 220px;
+        display: block;
+        margin: 0 auto;
+        border-radius: 12px;
+        background: #fbfdfd;
+        border: 1px solid rgba(18,32,42,0.08);
+      }
+      .signal-bars {
+        display: grid;
+        gap: 8px;
+        align-content: start;
+        min-height: 0;
+      }
+      .signal-bar-row {
+        display: grid;
+        grid-template-columns: 116px 1fr 28px;
+        gap: 8px;
+        align-items: center;
+        min-height: 22px;
+      }
+      .signal-bar-row label {
+        font-size: 0.7rem;
+        color: var(--muted);
+        font-weight: 800;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .signal-bar-rail {
+        position: relative;
+        height: 9px;
+        border-radius: 999px;
+        background: rgba(18,32,42,0.08);
+        overflow: hidden;
+      }
+      .signal-bar-rail span {
+        position: absolute;
+        inset: 0 auto 0 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #2d6eb3, #0d7a72);
+      }
+      .signal-bar-value {
+        font-size: 0.7rem;
+        font-weight: 900;
+        color: var(--muted);
+        text-align: right;
+      }
+      .metric-fill {
+        position: absolute;
+        inset: 0 auto 0 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #0d7a72, #c67910);
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.16) inset;
+      }
+
+      .snapshot-grid {
+        display: grid;
+        gap: 8px;
+        height: 100%;
+      }
+      .funnel-chart {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .funnel-step {
+        position: relative;
+        padding: 8px 10px;
+        border-radius: 14px;
+        border: 1px solid rgba(18,32,42,0.08);
+        background: rgba(255,255,255,0.9);
+        overflow: hidden;
+      }
+      .funnel-step::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: var(--step-width, 100%);
+        background: linear-gradient(90deg, rgba(13,122,114,0.12), rgba(45,110,179,0.08));
+      }
+      .funnel-step.hold-step::before {
+        background: linear-gradient(90deg, rgba(214,137,31,0.16), rgba(143,106,42,0.08));
+      }
+      .funnel-step > * {
+        position: relative;
+        z-index: 1;
+      }
+      .funnel-step strong {
+        display: block;
+        font-size: 0.68rem;
+        color: var(--muted);
+        font-weight: 800;
+      }
+      .funnel-step span {
+        display: block;
+        margin-top: 3px;
+        font-size: 0.86rem;
+        font-weight: 900;
+      }
+      .funnel-step small {
+        display: block;
+        margin-top: 2px;
+        font-size: 0.62rem;
+        color: var(--muted);
+        font-weight: 800;
+      }
+      .snapshot-row {
+        display: grid;
+        grid-template-columns: 56px 1fr auto;
+        gap: 8px;
+        align-items: center;
+      }
+      .snapshot-label {
+        font-size: 0.71rem;
+        color: var(--muted);
+        font-weight: 800;
+      }
+      .snapshot-count {
+        font-size: 0.96rem;
+        font-weight: 900;
+      }
+      .snapshot-note {
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: var(--muted);
+      }
+      .snapshot-callout {
+        margin-top: auto;
+        padding: 10px;
+        border-radius: 14px;
+        background: rgba(13, 122, 114, 0.08);
+        border: 1px solid rgba(13, 122, 114, 0.12);
+      }
+      .snapshot-callout strong {
+        display: block;
+        font-size: 0.67rem;
+        color: var(--muted);
+        font-weight: 800;
+      }
+      .snapshot-callout span {
+        display: block;
+        margin-top: 4px;
+        font-size: 0.8rem;
+        font-weight: 900;
+      }
+
+      .chip-section { display: grid; gap: 8px; }
+      .chip-group h4 { margin-bottom: 6px; }
+      .chip-cloud {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .chip, .nav-button, .segment button {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: #ffffff;
+        color: var(--ink);
+        border-radius: 15px;
+        cursor: pointer;
+        transition: 0.18s ease;
+      }
+      .chip {
+        padding: 6px 9px;
+        font-family: "Helvetica Neue", sans-serif;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+      .chip.signal {
+        color: #245a91;
+        background: rgba(45, 110, 179, 0.12);
+        border-color: rgba(45, 110, 179, 0.18);
+      }
+      .chip.focus {
+        color: #085f59;
+        background: rgba(13, 122, 114, 0.12);
+        border-color: rgba(13, 122, 114, 0.18);
+      }
+      .chip.selected {
+        outline: 2px solid rgba(198, 121, 16, 0.36);
+        transform: translateY(-1px);
+      }
+
+      .app-shell {
+        display: grid;
+        grid-template-columns: 248px minmax(0, 1.04fr) 454px;
+        gap: 12px;
+        min-height: 0;
+        height: max(86vh, 1080px);
+        align-items: stretch;
+      }
+      .shell-panel,
+      .list-panel,
+      .detail-panel {
+        padding: 14px;
+        min-height: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+      .detail-panel {
+        display: grid;
+        grid-template-rows: minmax(0, 1fr);
+      }
+      .panel-scroll {
+        height: 100%;
+        min-height: 0;
+        overflow: auto;
+        padding: 2px 6px 8px 2px;
+        scroll-padding-bottom: 8px;
+      }
+      .panel-scroll::-webkit-scrollbar { width: 8px; }
+      .panel-scroll::-webkit-scrollbar-thumb {
+        background: rgba(29, 42, 56, 0.16);
+        border-radius: 999px;
+      }
+
+      .section-title { margin-bottom: 6px; }
+      .section-copy {
+        color: var(--muted);
+        font-size: 0.78rem;
+        line-height: 1.35;
+      }
+      .nav-grid {
+        display: grid;
+        gap: 25px;
+        margin-top: 40px;
+      }
+      .nav-button {
+        padding: 11px 12px;
+        text-align: left;
+        background: linear-gradient(180deg, #ffffff, #fbfdfd);
+      }
+      .nav-button.active,
+      .segment button.active {
+        background: linear-gradient(180deg, #0d7a72, #0a655f);
+        color: #fff;
+        border-color: #0a655f;
+      }
+      .nav-label {
+        display: block;
+        font-family: "Helvetica Neue", sans-serif;
+        font-weight: 800;
+        font-size: 0.94rem;
+      }
+      .nav-sub {
+        display: block;
+        margin-top: 3px;
+        font-size: 0.72rem;
+        color: var(--muted);
+      }
+      .nav-button.active .nav-sub { color: rgba(255, 255, 255, 0.84); }
+      .navigator-hint {
+        display: none;
+      }
+      .navigator-hint ol {
+        margin: 7px 0 0 16px;
+        padding: 0;
+        color: var(--muted);
+        font-size: 0.74rem;
+        line-height: 1.4;
+      }
+      .mini-panel {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+        display: grid;
+        gap: 10px;
+      }
+      .mini-card {
+        padding: 12px;
+        border-radius: 14px;
+        background: rgba(255,255,255,0.78);
+        border: 1px solid rgba(18,32,42,0.08);
+      }
+      .risk-stack {
+        display: grid;
+        gap: 10px;
+      }
+      .risk-row {
+        display: grid;
+        grid-template-columns: 52px 1fr 28px;
+        gap: 8px;
+        align-items: center;
+      }
+      .risk-row label {
+        font-size: 0.7rem;
+        color: var(--muted);
+        font-weight: 800;
+      }
+      .risk-rail {
+        position: relative;
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(18,32,42,0.08);
+        overflow: hidden;
+      }
+      .risk-rail span {
+        position: absolute;
+        inset: 0 auto 0 0;
+        border-radius: inherit;
+      }
+      .risk-low { background: linear-gradient(90deg, #577489, #88a4b7); }
+      .risk-medium { background: linear-gradient(90deg, #2d6eb3, #59a1df); }
+      .risk-high { background: linear-gradient(90deg, #0d7a72, #13a198); }
+      .mini-title {
+        font-size: 0.72rem;
+        color: var(--muted);
+        font-weight: 800;
+        margin-bottom: 8px;
+      }
+      .sentiment-stack {
+        display: grid;
+        gap: 7px;
+      }
+      .sentiment-donut-wrap {
+        display: grid;
+        grid-template-columns: 84px 1fr;
+        gap: 10px;
+        align-items: center;
+      }
+      .sentiment-donut {
+        width: 84px;
+        height: 84px;
+        border-radius: 50%;
+        position: relative;
+        background: conic-gradient(
+          #d6891f 0deg var(--neg-angle, 0deg),
+          #577489 var(--neg-angle, 0deg) var(--neu-angle, 0deg),
+          #0d7a72 var(--neu-angle, 0deg) var(--pos-angle, 0deg),
+          #8f6a2a var(--pos-angle, 0deg) 360deg
+        );
+      }
+      .sentiment-donut::after {
+        content: "";
+        position: absolute;
+        inset: 16px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 1px solid rgba(18,32,42,0.08);
+      }
+      .sentiment-donut-center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1px;
+        z-index: 1;
+        text-align: center;
+      }
+      .sentiment-donut-center strong {
+        font-size: 0.95rem;
+        font-weight: 900;
+      }
+      .sentiment-donut-center span {
+        font-size: 0.62rem;
+        color: var(--muted);
+        font-weight: 800;
+      }
+      .sentiment-row {
+        display: grid;
+        grid-template-columns: 42px 1fr 26px;
+        align-items: center;
+        gap: 7px;
+      }
+      .sentiment-row label {
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: var(--muted);
+      }
+      .sentiment-rail {
+        position: relative;
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(18,32,42,0.08);
+        overflow: hidden;
+      }
+      .sentiment-rail span {
+        position: absolute;
+        inset: 0 auto 0 0;
+        border-radius: inherit;
+      }
+      .tone-negative { background: linear-gradient(90deg, #d6891f, #f0b95a); }
+      .tone-neutral { background: linear-gradient(90deg, #577489, #88a4b7); }
+      .tone-positive { background: linear-gradient(90deg, #0d7a72, #14a59a); }
+      .tone-mixed { background: linear-gradient(90deg, #8f6a2a, #c79a48); }
+      .candidate-list {
+        display: grid;
+        gap: 7px;
+        max-height: 180px;
+        overflow: auto;
+        padding-right: 2px;
+      }
+      .candidate-item {
+        display: grid;
+        gap: 4px;
+        padding: 8px 9px;
+        border-radius: 12px;
+        background: #fcfefe;
+        border: 1px solid rgba(18,32,42,0.08);
+      }
+      .candidate-item strong {
+        font-size: 0.76rem;
+        line-height: 1.25;
+      }
+      .candidate-item span {
+        font-size: 0.68rem;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .candidate-item em {
+        font-style: normal;
+        font-size: 0.66rem;
+        color: var(--muted);
+      }
+
+      .list-head {
+        display: grid;
+        gap: 9px;
+        margin-bottom: 0;
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        background: linear-gradient(180deg, rgba(255,255,255,0.985), rgba(255,255,255,0.93));
+        padding: 2px 2px 12px;
+      }
+      .toolbar {
+        display: flex;
+        gap: 7px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .segment {
+        display: inline-flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .segment button {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+        font-weight: 800;
+      }
+      .list-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        color: var(--muted);
+        font-family: "Helvetica Neue", sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+      }
+      .issue-list {
+        display: grid;
+        gap: 8px;
+        padding-bottom: 0;
+      }
+      .list-frame {
+        height: 100%;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        min-height: 0;
+      }
+      .issue-scroll {
+        min-height: 0;
+        height: 100%;
+        overflow: auto;
+        padding: 0 6px 8px 2px;
+        scroll-padding-bottom: 8px;
+      }
+      .issue-scroll::-webkit-scrollbar { width: 8px; }
+      .issue-scroll::-webkit-scrollbar-thumb {
+        background: rgba(29, 42, 56, 0.16);
+        border-radius: 999px;
+      }
+      .issue-row {
+        position: relative;
+        padding: 20px 20px 22px 22px;
+        border-radius: 16px;
+        background: linear-gradient(180deg, #ffffff 0%, #fcfefe 100%);
+        border: 1px solid rgba(18, 32, 42, 0.11);
+        cursor: pointer;
+        box-shadow: 0 6px 14px rgba(18, 32, 42, 0.04);
+      }
+      .issue-row::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 10px;
+        bottom: 10px;
+        width: 4px;
+        border-radius: 999px;
+        background: rgba(18, 32, 42, 0.08);
+      }
+      .issue-row.priority-row::before { background: linear-gradient(180deg, #0d7a72, #13a198); }
+      .issue-row.active {
+        outline: 2px solid rgba(13, 122, 114, 0.24);
+        background: linear-gradient(180deg, #fffdfa 0%, #ffffff 100%);
+        box-shadow: 0 10px 20px rgba(13, 122, 114, 0.08);
+      }
+      .issue-row.ready-row {
+        border-color: rgba(13, 122, 114, 0.18);
+      }
+      .row-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: start;
+      }
+      .row-topic {
+        font-size: 1.02rem;
+        line-height: 1.18;
+        font-weight: 900;
+        letter-spacing: -0.015em;
+        max-width: 92%;
+      }
+      .status-badge {
+        display: inline-block;
+        padding: 4px 7px;
+        border-radius: 999px;
+        font-family: "Helvetica Neue", sans-serif;
+        font-size: 0.66rem;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+      }
+      .status-ready {
+        background: rgba(13, 122, 114, 0.15);
+        color: #085f59;
+      }
+      .status-hold {
+        background: rgba(198, 121, 16, 0.16);
+        color: #8a5208;
+      }
+      .row-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 10px;
+        font-family: "Helvetica Neue", sans-serif;
+        font-size: 0.69rem;
+        color: var(--muted);
+        font-weight: 800;
+      }
+      .stat-pill {
+        padding: 4px 7px;
+        border-radius: 999px;
+        background: rgba(18, 32, 42, 0.05);
+        border: 1px solid rgba(18, 32, 42, 0.08);
+      }
+      .stat-pill.focus-pill {
+        background: rgba(13, 122, 114, 0.14);
+        border-color: rgba(13, 122, 114, 0.2);
+        color: #085f59;
+      }
+      .stat-pill.reliability-pill {
+        background: rgba(13, 122, 114, 0.14);
+        border-color: rgba(13, 122, 114, 0.18);
+        color: #085f59;
+      }
+      .stat-pill.sentiment-pill {
+        background: rgba(71, 90, 109, 0.12);
+        border-color: rgba(71, 90, 109, 0.14);
+        color: #4c5e70;
+      }
+      .row-summary {
+        margin-top: 11px;
+        color: var(--ink);
+        line-height: 1.6;
+        font-size: 0.88rem;
+        font-weight: 600;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        padding-right: 6px;
+      }
+      .labels {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 15px;
+      }
+      .tag {
+        border-radius: 999px;
+        padding: 4px 7px;
+        font-family: "Helvetica Neue", sans-serif;
+        font-size: 0.63rem;
+        background: rgba(18, 32, 42, 0.05);
+        color: #44515e;
+        font-weight: 700;
+        border: 1px solid rgba(18, 32, 42, 0.08);
+      }
+      .tag.signal {
+        background: rgba(45, 110, 179, 0.12);
+        color: #245a91;
+        border-color: rgba(45, 110, 179, 0.18);
+      }
+
+      .detail-top {
+        display: grid;
+        gap: 7px;
+        padding: 4px 4px 0;
+      }
+      .detail-sub {
+        color: var(--muted);
+        font-family: "Helvetica Neue", sans-serif;
+        font-size: 0.72rem;
+        line-height: 1.35;
+        font-weight: 700;
+      }
+      .detail-summary {
+        margin-top: 2px;
+        line-height: 1.42;
+        color: var(--ink);
+        font-size: 0.82rem;
+        font-weight: 500;
+      }
+      .impact-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px;
+        margin-top: 8px;
+      }
+      .impact-pill {
+        padding: 8px 9px;
+        border-radius: 13px;
+        border: 1px solid rgba(18, 32, 42, 0.09);
+        background: #fbfdfd;
+      }
+      .impact-pill strong {
+        display: block;
+        font-size: 0.67rem;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .impact-pill span {
+        display: block;
+        margin-top: 3px;
+        font-size: 0.84rem;
+        font-weight: 700;
+      }
+      .impact-pill.impact-negative span,
+      .impact-pill.risk-high span { color: #9d5e08; }
+      .impact-pill.impact-positive span { color: #085f59; }
+      .impact-pill.impact-neutral span,
+      .impact-pill.risk-low span { color: #35556a; }
+      .impact-pill.risk-medium span,
+      .impact-pill.impact-mixed span { color: #6c5a2f; }
+      .breakdown-grid {
+        display: grid;
+        gap: 7px;
+      }
+      .breakdown-row {
+        display: grid;
+        grid-template-columns: 54px 1fr 28px;
+        align-items: center;
+        gap: 8px;
+      }
+      .breakdown-row label {
+        font-size: 0.71rem;
+        color: var(--muted);
+        font-weight: 800;
+      }
+      .breakdown-bar {
+        position: relative;
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(18, 32, 42, 0.08);
+        overflow: hidden;
+      }
+      .breakdown-bar span {
+        position: absolute;
+        inset: 0 auto 0 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #0d7a72, #0c938a);
+      }
+      .breakdown-value {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--muted);
+        text-align: right;
+      }
+      .block {
+        margin-top: 10px;
+        padding: 12px 6px 0;
+        border-top: 1px solid var(--line);
+      }
+      .block h3 {
+        margin-bottom: 7px;
+        font-size: 0.95rem;
+      }
+      .detail-list {
+        display: grid;
+        gap: 7px;
+      }
+      .detail-item {
+        padding: 12px;
+        border-radius: 13px;
+        background: #fcfefe;
+        border: 1px solid rgba(18, 32, 42, 0.09);
+        font-size: 0.78rem;
+        line-height: 1.35;
+        font-weight: 500;
+      }
+      .detail-item a { color: var(--ink); }
+      .chart { margin-top: 6px; }
+      .trend-chart {
+        width: 100%;
+        height: 168px;
+        border-radius: 14px;
+        background: #fbfdfd;
+        border: 1px solid rgba(18, 32, 42, 0.09);
+      }
+      .axis-label {
+        fill: var(--muted);
+        font-size: 9px;
+        font-family: "Helvetica Neue", sans-serif;
+        font-weight: 700;
+      }
+      .tiny {
+        font-family: "Helvetica Neue", sans-serif;
+        color: var(--muted);
+        font-size: 0.7rem;
+        line-height: 1.35;
+      }
+      .loading-copy {
+        color: var(--muted);
+        font-size: 0.66rem;
+        font-weight: 700;
+        line-height: 1.4;
+      }
+      .loading-slot {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100%;
+        text-align: center;
+      }
+      .signal-card.single-pane-card {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+      }
+      .empty {
+        padding: 20px;
+        border-radius: 18px;
+        border: 1px dashed var(--line);
+        background: rgba(255, 255, 255, 0.52);
+        color: var(--muted);
+      }
+
+      .chip:hover, .nav-button:hover, .segment button:hover, .issue-row:hover {
+        transform: translateY(-1px);
+      }
+
+      @media (max-width: 1380px) {
+        body { overflow: auto; }
+        .wrap { height: auto; }
+        .topbar { grid-template-columns: 1fr; }
+        .evidence-layout { grid-template-columns: 1fr; }
+        .summary-grid { grid-template-columns: 1fr; }
+        .summary-visual-grid { grid-template-columns: 1fr; }
+        .funnel-chart { grid-template-columns: 1fr 1fr; }
+        .app-shell { grid-template-columns: 280px minmax(0, 1fr); height: auto; }
+        .detail-panel { grid-column: 1 / -1; height: auto; }
+        .shell-panel, .list-panel { height: auto; }
+        .list-frame, .panel-scroll { height: auto; }
+      }
+
+      @media (max-width: 980px) {
+        .app-shell, .hero-stat-row { grid-template-columns: 1fr; height: auto; }
+        .funnel-chart { grid-template-columns: 1fr; }
+        .shell-panel, .list-panel, .detail-panel { height: auto; }
+        .list-frame, .panel-scroll { height: auto; }
+      }
+    
+
+      .summary-main {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 8px;
+        min-height: 0;
+      }
+      .summary-card-head {
+        display: flex;
+      }
+      .summary-card-head-inline {
+        align-items: start;
+        justify-content: start;
+        gap: 10px;
+        margin-bottom: 12px;
+        flex-direction: column;
+      }
+      .summary-card-head-inline .eyebrow {
+        display: none;
+      }
+      .summary-card-head-inline h3 {
+        font-size: 1.02rem;
+        font-weight: 900;
+        color: var(--accent);
+      }
+      .summary-tabs {
+        display: inline-flex;
+        flex-wrap: nowrap;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+      .summary-tabs-inline {
+        width: 75%;
+        margin-left: 0;
+        justify-content: flex-start;
+      }
+      .summary-tab {
+        width: auto;
+        min-width: 82px;
+        white-space: nowrap;
+      }
+      .single-pane-card,
+      .single-pane-card.distribution-card {
+        height: 292px;
+        width: 80%;
+        justify-self: center;
+      }
+      .summary-pane .summary-chart-card,
+      .summary-pane .distribution-card {
+        width: 80%;
+        justify-self: center;
+      }
+      .collapse-back-button {
+        margin-top: 28px;
+        border: 1px solid rgba(198, 121, 16, 0.24);
+        background: linear-gradient(180deg, #d89a24, #b87812);
+        color: #fff;
+        border-radius: 999px;
+        padding: 12px 18px;
+        font-size: 0.84rem;
+        font-weight: 900;
+        box-shadow: 0 12px 22px rgba(184, 120, 18, 0.18);
+        align-self: start;
+        min-width: 132px;
+        text-align: center;
+      }
+
+      .summary-card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+      .summary-card-head h3 {
+        font-size: 1rem;
+        font-weight: 900;
+      }
+      .summary-tabs {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 6px;
+      }
+      .summary-tab {
+        border: 1px solid rgba(18, 32, 42, 0.08);
+        background: rgba(255,255,255,0.92);
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: var(--muted);
+      }
+      .summary-tab.active {
+        background: linear-gradient(180deg, #0d7a72, #0a655f);
+        border-color: #0a655f;
+        color: #fff;
+      }
+      .summary-tab-panels {
+        display: block;
+      }
+      .summary-pane { display: none; }
+      .summary-pane.active { display: block; }
+      .single-pane-card,
+      .single-pane-card.distribution-card {
+        height: 300px;
+      }
+      .focus-band {
+        margin-bottom: 0;
+      }
+      .focus-panel {
+        background: linear-gradient(180deg, rgba(255,252,247,0.98), rgba(255,255,255,0.98));
+        border: 1px solid rgba(198, 121, 16, 0.18);
+        border-radius: 22px;
+        box-shadow: 0 14px 32px rgba(18, 32, 42, 0.08);
+        padding: 28px 30px;
+        min-height: 208px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 130px;
+        gap: 12px;
+        align-items: start;
+        justify-content: space-between;
+        width: min(1040px, 100%);
+        margin: 0 auto;
+        position: relative;
+        overflow: hidden;
+      }
+      .focus-panel::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 8px;
+        background: linear-gradient(180deg, #d1a13a, #0d7a72);
+      }
+      .focus-panel .eyebrow {
+        font-size: 1.04rem;
+        font-weight: 900;
+        letter-spacing: 0.14em;
+      }
+      .focus-copy {
+        display: grid;
+        gap: 10px;
+        max-width: 980px;
+        padding-left: 10px;
+      }
+      .focus-panel h2 {
+        font-size: 1.62rem;
+        line-height: 1.07;
+        font-weight: 900;
+        letter-spacing: -0.025em;
+        max-width: 980px;
+      }
+      .focus-summary {
+        color: var(--ink);
+        font-size: 0.92rem;
+        line-height: 1.55;
+        font-weight: 700;
+        max-width: 980px;
+      }
+      .focus-kicker {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(13, 122, 114, 0.08);
+        border: 1px solid rgba(13, 122, 114, 0.12);
+        color: var(--accent);
+        font-size: 0.72rem;
+        font-weight: 900;
+        letter-spacing: 0.03em;
+      }
+      .focus-points {
+        display: grid;
+        gap: 8px;
+        margin-top: 2px;
+        max-width: 980px;
+      }
+      .focus-point {
+        display: flex;
+        gap: 8px;
+        align-items: start;
+        color: var(--ink);
+        font-size: 0.84rem;
+        line-height: 1.38;
+        font-weight: 700;
+      }
+      .focus-point::before {
+        content: "•";
+        color: var(--accent);
+        font-weight: 900;
+      }
+      .focus-actions {
+        display: grid;
+        gap: 6px;
+        justify-items: center;
+        align-content: center;
+        justify-self: center;
+        align-self: center;
+        min-width: 130px;
+        padding-top: 0;
+      }
+      .focus-cta {
+        border: 1px solid rgba(198, 121, 16, 0.24);
+        background: linear-gradient(180deg, #d89a24, #b87812);
+        color: #fff;
+        padding: 12px 18px;
+        border-radius: 999px;
+        font-weight: 900;
+        font-size: 0.84rem;
+        box-shadow: 0 12px 22px rgba(184, 120, 18, 0.18);
+        justify-self: center;
+        text-align: center;
+        min-width: 132px;
+      }
+      .focus-helper {
+        display: none;
+      }
+      .focus-cta:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      .explorer-shell {
+        margin-top: 12px;
+        display: block;
+      }
+      .explorer-body {
+        min-height: 0;
+      }
+      .explorer-shell.collapsed {
+        display: none;
+      }
+      .compact-nav-grid {
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .compact-list {
+        gap: 7px;
+      }
+      .issue-row {
+        padding: 14px 14px 15px 16px;
+        border-radius: 14px;
+      }
+      .row-topic {
+        font-size: 0.96rem;
+      }
+      .row-summary {
+        margin-top: 8px;
+        font-size: 0.83rem;
+        line-height: 1.45;
+        font-weight: 500;
+      }
+      .labels {
+        margin-top: 11px;
+      }
+      .stat-pill {
+        font-size: 0.62rem;
+      }
+
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="headline-band">
+        <article class="project-intro">
+          <div class="eyebrow">Reliability-Based Issue Analysis</div>
+          <div class="brand-row">
+            <img class="brand-icon" src="/static/icons/groundwire-mark.svg" alt="신문 아이콘" />
+            <h1>{{ app_name }}</h1>
+          </div>
+          <p class="subtitle">실시간 수집 흐름과 신뢰도 기준을 함께 보는 뉴스 이슈 보드</p>
+          <div class="hero-meta intro-meta">
+            <span class="hero-pill">실시간 감시 중</span>
+            <span class="hero-pill">최근 {{ runtime_status.article_window_hours }}시간 창</span>
+            <span class="hero-pill">핵심 이슈 우선 표시</span>
+          </div>
+          <div class="project-stat-row">
+            <div class="hero-stat project-stat">
+              <div class="hero-stat-label">수집</div>
+              <div class="hero-stat-value"><span id="collect-interval">{{ runtime_status.scheduler.collect_interval_minutes }}</span>m</div>
+              <div class="hero-stat-sub">마지막 <span id="last-collect-at">{{ runtime_status.latest_collect.created_at_display if runtime_status.latest_collect else "없음" }}</span></div>
+            </div>
+            <div class="hero-stat project-stat">
+              <div class="hero-stat-label">다음 수집</div>
+              <div class="hero-stat-value" id="collect-remaining">{{ "대기 중" if runtime_status.scheduler.collect_seconds_remaining is none else "곧 실행" }}</div>
+              <div class="hero-stat-sub">예정 <span id="next-collect-at">{{ runtime_status.scheduler.collect_next_run_display or "없음" }}</span></div>
+            </div>
+            <div class="hero-stat project-stat">
+              <div class="hero-stat-label">정책</div>
+              <div class="hero-stat-value">Hold {{ hold_threshold }}</div>
+              <div class="hero-stat-sub">범위 {{ runtime_status.article_window_hours }}시간</div>
+            </div>
+          </div>
+        </article>
+
+        <section class="focus-band">
+          <article class="focus-panel" id="focus-panel">
+            <div class="focus-copy">
+              <div class="eyebrow">Focus Issue</div>
+              <h2 id="focus-topic">핵심 이슈를 정리하고 있습니다</h2>
+              <p class="focus-summary" id="focus-summary">가장 먼저 봐야 할 이슈를 고르는 중입니다.</p>
+              <div class="focus-kicker">지금 가장 중요한 이슈</div>
+              <div class="focus-points" id="focus-points"></div>
+            </div>
+            <div class="focus-actions">
+              <button class="focus-cta" id="focus-open-button" type="button">이슈 분석 보기</button>
+            </div>
+          </article>
+        </section>
+      </section>
+
+      <section class="topbar">
+        {% set total_issue_count = priority_issues|length + general_issues|length + hold_issues|length %}
+        {% set safe_total = total_issue_count if total_issue_count > 0 else 1 %}
+        {% set priority_pct = ((priority_issues|length / safe_total) * 100)|round(0, 'common')|int %}
+        {% set general_pct = ((general_issues|length / safe_total) * 100)|round(0, 'common')|int %}
+        {% set hold_pct = ((hold_issues|length / safe_total) * 100)|round(0, 'common')|int %}
+        {% set recent_pct = ((market_pulse.recent_article_count / (market_pulse.recent_article_count + 10)) * 100)|round(0, 'common')|int %}
+        <article class="evidence-panel">
+          <div class="evidence-head">
+            <div class="evidence-title">
+              <div class="eyebrow">Signals & Summary</div>
+            </div>
+          </div>
+
+          <div class="evidence-layout">
+            <section class="evidence-block evidence-side">
+              <h3>실시간 신호</h3>
+              <div class="signal-strip">
+                <div class="signal-card">
+                  <strong>1시간 상승 키워드</strong>
+                  <span id="hero-top-signal">{{ market_pulse.rising_keyword.keyword if market_pulse.rising_keyword else "계산 중" }}</span>
+                  <small>기사 발행 시각 기준 1시간 비교</small>
+                </div>
+                <div class="signal-card">
+                  <strong>승격 가능성</strong>
+                  <span id="hero-focus-topic">{{ market_pulse.promotion_candidate.topic ~ ' · ' ~ market_pulse.promotion_candidate.score ~ '점' if market_pulse.promotion_candidate else "핵심 후보 탐색 중" }}</span>
+                  <small>보류 이슈 중 상향 후보</small>
+                </div>
+                <div class="signal-card">
+                  <strong>감정 스냅샷</strong>
+                  <div class="hero-sentiment-wrap">
+                    <div class="hero-sentiment-donut" id="hero-sentiment-donut">
+                      <div class="hero-sentiment-center"><span id="hero-tone">-</span></div>
+                    </div>
+                    <div class="hero-sentiment-legend">
+                      <span><i style="background:#577489"></i>중립</span>
+                      <span><i style="background:#0d7a72"></i>긍정</span>
+                      <span><i style="background:#d6891f"></i>부정/혼합</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="evidence-block funnel-shell">
+              <div class="summary-inline-funnel">
+                <div class="summary-funnel-title">처리 흐름</div>
+                <div class="summary-funnel-strip" id="summary-funnel">
+                  <div class="summary-funnel-card loading-placeholder collect-step"><strong>수집</strong><div class="summary-funnel-inline"><span>로딩 중...</span></div></div>
+                  <div class="summary-funnel-card loading-placeholder cluster-step"><strong>클러스터링</strong><div class="summary-funnel-inline"><span>로딩 중...</span></div></div>
+                  <div class="summary-funnel-card loading-placeholder ready-step"><strong>READY</strong><div class="summary-funnel-inline"><span>로딩 중...</span></div></div>
+                  <div class="summary-funnel-card loading-placeholder hold-step"><strong>HOLD</strong><div class="summary-funnel-inline"><span>로딩 중...</span></div></div>
+                </div>
+                <div class="tiny loading-copy" id="funnel-meta">로딩 중...</div>
+              </div>
+            </section>
+
+            <section class="summary-card">
+              <div class="summary-card-head summary-card-head-inline">
+                <div>
+                  <h3>전략 요약</h3>
+                </div>
+                <div class="summary-tabs summary-tabs-inline">
+                  <button class="summary-tab active" type="button" data-summary-view="flow">최근 흐름</button>
+                  <button class="summary-tab" type="button" data-summary-view="signals">상위 신호</button>
+                  <button class="summary-tab" type="button" data-summary-view="risk">정책 리스크</button>
+                  <button class="summary-tab" type="button" data-summary-view="impact">시장 영향</button>
+                </div>
+              </div>
+              <div class="summary-card-inner summary-tab-panels">
+                <div class="summary-pane active" data-summary-pane="flow">
+                  <div class="summary-chart-card flow-card single-pane-card">
+                    <h4>최근 흐름</h4>
+                    <svg class="summary-activity-chart" id="summary-activity-chart" viewBox="0 0 320 140" preserveAspectRatio="xMidYMid meet"></svg>
+                    <div class="tiny loading-copy" id="summary-activity-meta">로딩 중...</div>
+                  </div>
+                </div>
+                <div class="summary-pane" data-summary-pane="signals">
+                  <div class="summary-chart-card signal-card single-pane-card">
+                    <h4>상위 신호</h4>
+                    <div class="signal-bars" id="summary-signal-bars"><div class="loading-slot"><div class="loading-copy">로딩 중...</div></div></div>
+                  </div>
+                </div>
+                <div class="summary-pane" data-summary-pane="risk">
+                  <div class="distribution-card policy-card single-pane-card">
+                    <h4>정책 리스크 분포</h4>
+                    <div class="distribution-top">
+                      <div class="mini-donut" id="policy-risk-donut">
+                        <div class="mini-donut-center" id="policy-risk-donut-center">
+                          <strong id="policy-risk-donut-value">0</strong>
+                          <span>이슈</span>
+                        </div>
+                      </div>
+                      <div class="distribution-legend" id="policy-risk-legend"><div class="loading-copy">로딩 중...</div></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="summary-pane" data-summary-pane="impact">
+                  <div class="distribution-card market-card single-pane-card">
+                    <h4>시장 영향 분포</h4>
+                    <div class="distribution-top">
+                      <div class="mini-donut" id="market-impact-donut">
+                        <div class="mini-donut-center" id="market-impact-donut-center">
+                          <strong id="market-impact-donut-value">0</strong>
+                          <span>이슈</span>
+                        </div>
+                      </div>
+                      <div class="distribution-legend" id="market-impact-legend"><div class="loading-copy">로딩 중...</div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </article>
+      </section>
+
+      <section class="explorer-shell collapsed" id="explorer-shell">
+        <div class="explorer-body">
+          <section class="app-shell">
+            <aside class="shell-panel">
+              <div class="panel-scroll">
+                <div class="section-title">
+                  <div class="eyebrow">Navigator</div>
+                  <h2>탐색 범위</h2>
+                </div>
+                <div class="nav-grid compact-nav-grid">
+                  <button class="nav-button active" data-view="priority">
+                    <span class="nav-label">핵심 이슈</span>
+                    <span class="nav-sub">우선 확인 대상</span>
+                  </button>
+                  <button class="nav-button" data-view="general">
+                    <span class="nav-label">일반 추적</span>
+                    <span class="nav-sub">지속 추적 이슈</span>
+                  </button>
+                  <button class="nav-button" data-view="all">
+                    <span class="nav-label">전체 보기</span>
+                    <span class="nav-sub">모든 이슈 보기</span>
+                  </button>
+                </div>
+                <button class="collapse-back-button" id="collapse-back-button" type="button">← 요약으로 돌아가기</button>
+              </div>
+            </aside>
+
+            <section class="list-panel">
+              <div class="list-frame">
+                <div class="list-head">
+                  <div class="eyebrow">Live Board</div>
+                  <h2 id="list-title">관련 이슈</h2>
+                  <div class="toolbar">
+                    <div class="segment">
+                      <button class="active" data-sort="reliability">신뢰도</button>
+                      <button data-sort="latest">최신순</button>
+                      <button data-sort="volume">기사수</button>
+                    </div>
+                  </div>
+                  <div class="list-meta">
+                    <span id="list-meta-text">핵심 이슈를 먼저 표시합니다.</span>
+                    <span id="active-filter-text">필터 없음</span>
+                  </div>
+                </div>
+                <div class="issue-scroll">
+                  <div class="issue-list compact-list" id="issue-list"></div>
+                </div>
+              </div>
+            </section>
+
+            <aside class="detail-panel">
+              <div class="panel-scroll">
+                <div class="detail-top">
+                  <div class="eyebrow">Detail Panel</div>
+                  <h2 id="detail-topic">이슈를 선택해 주세요</h2>
+                  <div class="detail-sub" id="detail-meta">핵심 이슈를 펼치면 상세 분석이 여기에 표시됩니다.</div>
+                  <div class="detail-summary" id="detail-summary">현재는 아직 선택된 이슈가 없습니다.</div>
+                  <div class="impact-grid" id="detail-impact-grid"></div>
+                  <div class="labels" id="detail-signals"></div>
+                  <div class="labels" id="detail-keywords"></div>
+                </div>
+
+                <div class="block">
+                  <h3>신뢰도 분해</h3>
+                  <div class="breakdown-grid" id="detail-reliability-breakdown"></div>
+                </div>
+
+                <div class="block">
+                  <h3>키워드 추이</h3>
+                  <div class="tiny" id="trend-title">선택한 키워드 또는 이슈의 시간대별 기사 출현 추이를 보여줍니다.</div>
+                  <div class="chart">
+                    <svg class="trend-chart" id="trend-chart" viewBox="0 0 420 205" preserveAspectRatio="xMidYMid meet"></svg>
+                    <div class="tiny" id="trend-meta" style="margin-top: 6px;">최근 8개 시간 버킷 기준</div>
+                  </div>
+                </div>
+
+                <div class="block">
+                  <h3>핵심 포인트</h3>
+                  <div class="detail-list" id="detail-points"></div>
+                </div>
+
+                <div class="block">
+                  <h3>리스크</h3>
+                  <div class="detail-list" id="detail-risks"></div>
+                </div>
+
+                <div class="block">
+                  <h3>관련 기사</h3>
+                  <div class="detail-list" id="detail-articles"></div>
+                </div>
+              </div>
+            </aside>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script id="issues-data" type="application/json">{{ issues_json | safe }}</script>
+    <script id="runtime-data" type="application/json">{{ runtime_status | tojson | safe }}</script>
+    <script>
+      let issuesData = JSON.parse(document.getElementById("issues-data").textContent);
+      let runtimeData = JSON.parse(document.getElementById("runtime-data").textContent);
+      const state = {
+        view: "priority",
+        keyword: "",
+        keywordLabel: "",
+        sort: "reliability",
+        selectedIssueId: "",
+        summaryView: "flow",
+        explorerOpen: false,
+      };
+      let latestAnalyzeTimestamp = "{{ runtime_status.latest_analyze.created_at if runtime_status.latest_analyze else '' }}";
+      let latestCollectTimestamp = "{{ runtime_status.latest_collect.created_at if runtime_status.latest_collect else '' }}";
+
+      function issueMatchesView(issue) {
+        if (state.view === "all") return true;
+        if (state.view === "priority") {
+          const readyPriorityExists = issuesData.some((item) => item.status === "READY" && item.priority === "priority");
+          if (readyPriorityExists) return issue.status === "READY" && issue.priority === "priority";
+          return isEmergingPriority(issue);
+        }
+        if (state.view === "general") return issue.status === "READY" && issue.priority === "general";
+        return true;
+      }
+
+      function isEmergingPriority(issue) {
+        if (issue.status !== "HOLD") return false;
+        const articleCount = issue.articles?.length || 0;
+        const hasSignals = (issue.key_signals || []).length > 0;
+        return issue.reliability >= 0.55 && articleCount >= 2 && hasSignals;
+      }
+
+      function issueMatchesKeyword(issue) {
+        if (!state.keyword) return true;
+        const haystack = [issue.topic, ...(issue.keywords || []), ...(issue.key_signals || [])].join(" ").toLowerCase();
+        return haystack.includes(state.keyword);
+      }
+
+      function getVisibleIssues() {
+        const filtered = issuesData
+          .filter(issueMatchesView)
+          .filter(issueMatchesKeyword);
+        return sortIssues(filtered);
+      }
+      function getFeaturedIssue() {
+        const priorityReady = sortIssues(
+          issuesData
+            .filter((issue) => issue.status === "READY" && issue.priority === "priority")
+            .filter(issueMatchesKeyword)
+        );
+        if (priorityReady.length) return priorityReady[0];
+        const visible = getVisibleIssues();
+        if (visible.length) return visible[0];
+        return sortIssues([...issuesData])[0] || null;
+      }
+
+      function setSummaryView(view) {
+        state.summaryView = view;
+        document.querySelectorAll('[data-summary-view]').forEach((button) => {
+          button.classList.toggle('active', button.dataset.summaryView === view);
+        });
+        document.querySelectorAll('[data-summary-pane]').forEach((pane) => {
+          pane.classList.toggle('active', pane.dataset.summaryPane === view);
+        });
+      }
+
+      function setExplorerOpen(open) {
+        state.explorerOpen = open;
+        const shell = document.getElementById('explorer-shell');
+        shell.classList.toggle('collapsed', !open);
+      }
+
+      function renderFeaturedIssue() {
+        const issue = getFeaturedIssue();
+        const topic = document.getElementById('focus-topic');
+        const summary = document.getElementById('focus-summary');
+        const points = document.getElementById('focus-points');
+        const button = document.getElementById('focus-open-button');
+        if (!issue) {
+          topic.textContent = '핵심 이슈를 정리하고 있습니다';
+          summary.textContent = '지금은 표시할 이슈가 없습니다.';
+          points.innerHTML = '';
+          button.disabled = true;
+          return;
+        }
+        button.disabled = false;
+        button.dataset.issueId = issue.id;
+        const keySignal = issue.key_signals?.[0];
+        const impactLabel = formatLabel(issue.market_impact);
+        const topicLabel = issue.topic.split('·').map((part) => part.trim()).filter(Boolean).slice(0, 2).join(' · ') || issue.topic;
+        const impactHeadline = {
+          positive: '상승 신호 확산',
+          negative: '하방 리스크 확대',
+          mixed: '변동성 확대',
+          neutral: '핵심 변수 부상',
+        };
+        const headline = keySignal ? `${topicLabel}, ${keySignal} 부각` : `${topicLabel}, ${impactHeadline[issue.market_impact] || '핵심 이슈 부상'}`;
+        const shortSummary = (issue.summary || '').split(/(?<=[.!?다])\s+/)[0] || issue.summary;
+        const pointSource = (issue.key_points && issue.key_points.length ? issue.key_points : (issue.articles || []).slice(0, 3).map((article) => article.title)).slice(0, 3);
+        topic.textContent = headline;
+        const summaryLines = [`${shortSummary}`, `현재 영향은 ${impactLabel}, 정책 리스크는 ${formatLabel(issue.policy_risk)}입니다.`].filter(Boolean);
+        summary.innerHTML = summaryLines.map((line) => `<span>${line}</span>`).join('<br>');
+        points.innerHTML = pointSource
+          .map((point) => String(point).replace(/^[-•]\s*/, '').trim())
+          .map((point) => `<div class="focus-point">${point}</div>`)
+          .join('');
+      }
+
+      function renderList() {
+        const container = document.getElementById("issue-list");
+        const issues = getVisibleIssues();
+        renderFeaturedIssue();
+        const titleMap = { priority: "관련 이슈", general: "일반 추적", all: "전체 이슈" };
+        const copyMap = {
+          priority: "핵심 이슈와 연결된 관련 이슈를 표시합니다.",
+          general: "일반 모니터링 이슈를 표시합니다.",
+          all: "모든 이슈를 통합해서 보여줍니다.",
+        };
+        const sortLabelMap = { reliability: "신뢰도순", latest: "최신순", volume: "기사수순" };
+
+        document.getElementById("list-title").textContent = titleMap[state.view];
+        document.getElementById("list-meta-text").textContent = `${copyMap[state.view]} 현재 ${issues.length}건`;
+        document.getElementById("active-filter-text").textContent = state.keywordLabel ? `선택 키워드: ${state.keywordLabel} · ${sortLabelMap[state.sort]}` : sortLabelMap[state.sort];
+
+        if (!issues.length) {
+          state.selectedIssueId = "";
+          container.innerHTML = '<div class="empty">현재 조건과 맞는 이슈가 없습니다. 다른 구역을 보거나 키워드 필터를 해제해보세요.</div>';
+          document.getElementById("detail-meta").textContent = "분석 열기를 누르면 아래에 상세 분석이 펼쳐집니다.";
+        clearDetailPanel();
+          return;
+        }
+
+        container.innerHTML = issues
+          .map((issue) => {
+            const signalTags = (issue.key_signals || []).slice(0, 3).map((signal) => `<span class="tag signal">${signal}</span>`).join("");
+            const keywordTags = (issue.keywords || []).slice(0, 4).map((keyword) => `<span class="tag">${keyword}</span>`).join("");
+            const keywordBlock = (signalTags || keywordTags)
+              ? `<div class="keyword-stack">${signalTags ? `<div class="keyword-row">${signalTags}</div>` : ""}${keywordTags ? `<div class="keyword-row">${keywordTags}</div>` : ""}</div>`
+              : "";
+            return `
+              <article class="issue-row ${issue.id === state.selectedIssueId ? "active" : ""} ${issue.priority === "priority" ? "priority-row" : ""} ${issue.status === "READY" ? "ready-row" : ""}" data-issue-id="${issue.id}">
+                <div class="row-top">
+                  <div>
+                    <div class="row-topic">${issue.topic}</div>
+                    <div class="row-stats">
+                      <span class="stat-pill reliability-pill">reliability ${issue.reliability}</span>
+                      <span class="stat-pill ${issue.priority === "priority" ? "focus-pill" : ""}">${issue.priority}</span>
+                      <span class="stat-pill sentiment-pill">영향 ${formatLabel(issue.market_impact)}</span>
+                      <span class="stat-pill">정책 ${formatLabel(issue.policy_risk)}</span>
+                      ${issue.status === "HOLD" ? '<span class="stat-pill">핵심 후보</span>' : ""}
+                      <span class="stat-pill">기사 ${issue.articles.length}건</span>
+                    </div>
+                  </div>
+                  <span class="status-badge ${issue.status === "READY" ? "status-ready" : "status-hold"}">${issue.status}</span>
+                </div>
+                <div class="row-summary">${issue.summary}</div>
+                ${keywordBlock}
+              </article>
+            `;
+          })
+          .join("");
+
+        container.querySelectorAll("[data-issue-id]").forEach((card) => {
+          card.addEventListener("click", () => { setExplorerOpen(true); openIssue(card.dataset.issueId); });
+        });
+      }
+
+      function openIssue(issueId) {
+        const found = issuesData.find((issue) => issue.id === issueId);
+        if (!found) return;
+        state.selectedIssueId = issueId;
+        renderList();
+        renderDetail(found, "이슈 상세");
+        const keyword = found.key_signals?.[0] || found.keywords?.[0] || found.topic;
+        if (keyword) renderTrend(keyword.toLowerCase(), keyword);
+      }
+
+      function renderDetail(issue, contextLabel) {
+        document.getElementById("detail-topic").textContent = issue.topic;
+        document.getElementById("detail-meta").textContent = `${contextLabel} | ${issue.status} | ${issue.priority} | reliability ${issue.reliability}`;
+        document.getElementById("detail-summary").textContent = issue.summary;
+
+        const signals = document.getElementById("detail-signals");
+        const keywords = document.getElementById("detail-keywords");
+        const points = document.getElementById("detail-points");
+        const risks = document.getElementById("detail-risks");
+        const articles = document.getElementById("detail-articles");
+        const impactGrid = document.getElementById("detail-impact-grid");
+        const reliabilityBreakdown = document.getElementById("detail-reliability-breakdown");
+        signals.innerHTML = "";
+        keywords.innerHTML = "";
+        points.innerHTML = "";
+        risks.innerHTML = "";
+        articles.innerHTML = "";
+        impactGrid.innerHTML = "";
+        reliabilityBreakdown.innerHTML = "";
+
+        [
+          ["시장 영향", issue.market_impact, `impact-${issue.market_impact}`],
+          ["정책 리스크", issue.policy_risk, `risk-${issue.policy_risk}`],
+          ["변동성", issue.volatility_risk, `risk-${issue.volatility_risk}`],
+        ].forEach(([label, value, className]) => {
+          const div = document.createElement("div");
+          div.className = `impact-pill ${className}`;
+          div.innerHTML = `<strong>${label}</strong><span>${formatLabel(value)}</span>`;
+          impactGrid.appendChild(div);
+        });
+
+        const breakdown = issue.reliability_breakdown || {};
+        [
+          ["출처", breakdown.source_diversity],
+          ["최신성", breakdown.recency],
+          ["근거", breakdown.evidence_coverage],
+          ["교차검증", breakdown.cross_source_confirmation],
+        ].forEach(([label, value]) => {
+          const safe = Math.max(0, Math.min(Number(value || 0), 1));
+          const row = document.createElement("div");
+          row.className = "breakdown-row";
+          row.innerHTML = `
+            <label>${label}</label>
+            <div class="breakdown-bar"><span style="width:${Math.round(safe * 100)}%;"></span></div>
+            <div class="breakdown-value">${safe.toFixed(2)}</div>
+          `;
+          reliabilityBreakdown.appendChild(row);
+        });
+
+        (issue.key_signals || []).forEach((item) => {
+          const span = document.createElement("span");
+          span.className = "tag signal";
+          span.textContent = item;
+          signals.appendChild(span);
+        });
+        (issue.keywords || []).forEach((item) => {
+          const span = document.createElement("span");
+          span.className = "tag";
+          span.textContent = item;
+          keywords.appendChild(span);
+        });
+        (issue.key_points || []).forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "detail-item";
+          div.textContent = item;
+          points.appendChild(div);
+        });
+        (issue.risk_points || []).forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "detail-item";
+          div.textContent = item;
+          risks.appendChild(div);
+        });
+        (issue.articles || []).forEach((article) => {
+          const div = document.createElement("div");
+          div.className = "detail-item";
+          div.innerHTML = `<div class="tiny">${article.source} | 게시 ${article.published_at}</div><div style="margin-top:5px;"><a href="${article.url}" target="_blank" rel="noreferrer">${article.title}</a></div>`;
+          articles.appendChild(div);
+        });
+      }
+
+      function clearDetailPanel() {
+        document.getElementById("detail-topic").textContent = "이슈를 선택해 주세요";
+        document.getElementById("detail-meta").textContent = "현재 선택된 이슈가 없습니다.";
+        document.getElementById("detail-summary").textContent = "핵심 이슈를 열면 아래 분석 영역에서 상세 내용이 표시됩니다.";
+        document.getElementById("detail-signals").innerHTML = "";
+        document.getElementById("detail-keywords").innerHTML = "";
+        document.getElementById("detail-impact-grid").innerHTML = "";
+        document.getElementById("detail-reliability-breakdown").innerHTML = "";
+        document.getElementById("detail-points").innerHTML = "";
+        document.getElementById("detail-risks").innerHTML = "";
+        document.getElementById("detail-articles").innerHTML = "";
+        document.getElementById("trend-title").textContent = "선택한 키워드 또는 이슈의 시간대별 기사 출현 추이를 보여줍니다.";
+        document.getElementById("trend-meta").textContent = "최근 8개 시간 버킷 기준";
+        document.getElementById("trend-chart").innerHTML = "";
+      }
+
+      function renderTrend(keyword, label) {
+        const related = issuesData.filter((issue) => {
+          const haystack = [issue.topic, ...(issue.keywords || []), ...(issue.key_signals || [])].join(" ").toLowerCase();
+          return haystack.includes(keyword);
+        });
+
+        const buckets = new Map();
+        related.forEach((issue) => {
+          Object.entries(issue.hourly_counts || {}).forEach(([hour, count]) => {
+            buckets.set(hour, (buckets.get(hour) || 0) + count);
+          });
+        });
+
+        const sorted = Array.from(buckets.entries()).sort((a, b) => a[0].localeCompare(b[0])).slice(-8);
+        const svg = document.getElementById("trend-chart");
+        svg.innerHTML = "";
+        document.getElementById("trend-title").textContent = `"${label}" 관련 기사 추이`;
+
+        if (!sorted.length) {
+          document.getElementById("trend-meta").textContent = "시간대 데이터가 없습니다.";
+          return;
+        }
+
+        const max = Math.max(...sorted.map(([, count]) => count), 1);
+        const displayMax = max <= 2 ? max + 1 : max;
+        const width = 420;
+        const height = 205;
+        const paddingTop = 18;
+        const paddingBottom = 38;
+        const paddingLeft = 46;
+        const paddingRight = 22;
+        const chartWidth = width - paddingLeft - paddingRight;
+        const chartHeight = height - paddingTop - paddingBottom;
+        const step = sorted.length === 1 ? 0 : chartWidth / (sorted.length - 1);
+        const yTicks = buildYAxisTicks(displayMax);
+
+        yTicks.forEach((tick) => {
+          const ratio = displayMax === 0 ? 0 : tick / displayMax;
+          const y = height - paddingBottom - ratio * chartHeight;
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute("x1", paddingLeft);
+          line.setAttribute("x2", width - paddingRight);
+          line.setAttribute("y1", y);
+          line.setAttribute("y2", y);
+          line.setAttribute("stroke", "rgba(29,42,56,0.08)");
+          line.setAttribute("stroke-width", "1");
+          svg.appendChild(line);
+
+          const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          text.setAttribute("x", String(paddingLeft - 10));
+          text.setAttribute("y", String(y + 3));
+          text.setAttribute("text-anchor", "end");
+          text.setAttribute("class", "axis-label");
+          text.textContent = String(tick);
+          svg.appendChild(text);
+        });
+
+        const axisLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        axisLine.setAttribute("x1", paddingLeft);
+        axisLine.setAttribute("x2", paddingLeft);
+        axisLine.setAttribute("y1", paddingTop);
+        axisLine.setAttribute("y2", height - paddingBottom);
+        axisLine.setAttribute("stroke", "rgba(29,42,56,0.12)");
+        axisLine.setAttribute("stroke-width", "1");
+        svg.appendChild(axisLine);
+
+        const points = sorted.map(([hour, count], index) => {
+          const x = paddingLeft + step * index;
+          const y = height - paddingBottom - ((count / displayMax) * chartHeight);
+          return { x, y, hour, count };
+        });
+
+        const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+        polyline.setAttribute("fill", "none");
+        polyline.setAttribute("stroke", "#0d7a72");
+        polyline.setAttribute("stroke-width", "3");
+        polyline.setAttribute("points", points.map((p) => `${p.x},${p.y}`).join(" "));
+        svg.appendChild(polyline);
+
+        points.forEach((point) => {
+          const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          circle.setAttribute("cx", point.x);
+          circle.setAttribute("cy", point.y);
+          circle.setAttribute("r", "4");
+          circle.setAttribute("fill", "#0d7a72");
+          svg.appendChild(circle);
+
+          const labelText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          labelText.setAttribute("x", String(point.x - 4));
+          labelText.setAttribute("y", String(point.y - 8));
+          labelText.setAttribute("class", "axis-label");
+          labelText.textContent = String(point.count);
+          svg.appendChild(labelText);
+        });
+
+        points.forEach((point) => {
+          const timeText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          timeText.setAttribute("x", String(point.x));
+          timeText.setAttribute("y", String(height - 10));
+          timeText.setAttribute("text-anchor", "middle");
+          timeText.setAttribute("class", "axis-label");
+          timeText.textContent = point.hour.slice(11, 13);
+          svg.appendChild(timeText);
+        });
+
+        document.getElementById("trend-meta").textContent = `y축 기사 수 | ${sorted.length}개 시간 버킷 | ${related.length}개 이슈 연결`;
+      }
+
+      function sortIssues(issues) {
+        const sorted = [...issues];
+        if (state.sort === "latest") {
+          return sorted.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+        }
+        if (state.sort === "volume") {
+          return sorted.sort((a, b) => (b.articles?.length || 0) - (a.articles?.length || 0) || b.reliability - a.reliability);
+        }
+        return sorted.sort((a, b) => b.reliability - a.reliability || new Date(b.updated_at) - new Date(a.updated_at));
+      }
+
+      function scrollIssueListToTop() {
+        const scroller = document.querySelector('.issue-scroll');
+        if (scroller) scroller.scrollTop = 0;
+      }
+
+      function getSentimentSnapshot() {
+        const counts = { negative: 0, neutral: 0, positive: 0, mixed: 0 };
+        issuesData.forEach((issue) => {
+          const key = issue.market_impact || issue.sentiment || "neutral";
+          counts[key] = (counts[key] || 0) + 1;
+        });
+        return counts;
+      }
+
+      function buildYAxisTicks(max) {
+        if (max <= 1) return [0, 1];
+        if (max <= 2) return [0, 1, 2];
+        if (max <= 4) return [0, 1, 2, 3, 4];
+        const step = Math.max(1, Math.ceil(max / 4));
+        const ticks = [0];
+        for (let value = step; value < max; value += step) ticks.push(value);
+        if (ticks[ticks.length - 1] !== max) ticks.push(max);
+        return ticks;
+      }
+
+      function applyKeyword(keyword, label) {
+        state.keyword = keyword.toLowerCase();
+        state.keywordLabel = label;
+        document.querySelectorAll("[data-filter-keyword]").forEach((chip) => {
+          chip.classList.toggle("selected", chip.textContent.startsWith(label));
+        });
+        renderList();
+        renderTrend(state.keyword, label);
+        const visible = getVisibleIssues();
+        if (visible.length) {
+          setExplorerOpen(true);
+          openIssue(visible[0].id);
+        }
+      }
+
+      async function refreshStatus() {
+        const response = await fetch("/api/system/status");
+        const data = await response.json();
+        document.getElementById("collect-interval").textContent = data.scheduler.collect_interval_minutes;
+        document.getElementById("last-collect-at").textContent = data.latest_collect?.created_at_display ?? formatCompactDateTime(data.latest_collect?.created_at) ?? "없음";
+        document.getElementById("next-collect-at").textContent = data.scheduler.collect_next_run_display ?? formatCompactDateTime(data.scheduler.collect_next_run_at) ?? "없음";
+        document.getElementById("collect-remaining").textContent = formatRemaining(data.scheduler.collect_seconds_remaining);
+        const collectChanged = (data.latest_collect?.created_at || "") !== latestCollectTimestamp;
+        latestCollectTimestamp = data.latest_collect?.created_at || "";
+        if ((data.latest_analyze?.created_at || "") !== latestAnalyzeTimestamp) {
+          latestAnalyzeTimestamp = data.latest_analyze?.created_at || "";
+          await refreshDashboardData();
+        } else if (collectChanged) {
+          await refreshDashboardData();
+        }
+      }
+
+      function formatCompactDateTime(value) {
+        if (!value) return null;
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        const mm = String(date.getMonth() + 1).padStart(2, "0");
+        const dd = String(date.getDate()).padStart(2, "0");
+        const hh = String(date.getHours()).padStart(2, "0");
+        const mi = String(date.getMinutes()).padStart(2, "0");
+        return `${mm}-${dd} ${hh}:${mi}`;
+      }
+
+      async function refreshDashboardData() {
+        const response = await fetch("/api/dashboard-data");
+        const data = await response.json();
+        issuesData = data.issues || [];
+        runtimeData = data.runtime_status || runtimeData;
+        renderPulse(data.market_pulse || {});
+        renderList();
+        const visible = getVisibleIssues();
+        if (state.explorerOpen) {
+          if (state.selectedIssueId && issuesData.some((issue) => issue.id === state.selectedIssueId)) {
+            openIssue(state.selectedIssueId);
+          } else if (visible.length) {
+            openIssue(visible[0].id);
+          } else {
+            clearDetailPanel();
+          }
+        } else {
+          clearDetailPanel();
+        }
+      }
+
+      function renderPulse(marketPulse) {
+        renderSummaryDashboard(marketPulse);
+        const rising = marketPulse.rising_keyword;
+        document.getElementById("hero-top-signal").textContent = rising ? `${rising.keyword} (+${rising.delta})` : "계산 중";
+        const promotion = marketPulse.promotion_candidate;
+        document.getElementById("hero-focus-topic").textContent = promotion ? `${promotion.topic} · ${promotion.score}점` : "핵심 후보 탐색 중";
+        updateSummaryMetrics();
+        renderFeaturedIssue();
+      }
+
+      function updateSummaryMetrics() {
+        renderNavigatorInsights();
+      }
+
+      function formatRemaining(value) {
+        if (value === null || value === undefined) return "대기 중";
+        if (value < 60) return `${value}s`;
+        const minutes = Math.floor(value / 60);
+        return `${minutes}m 남음`;
+      }
+
+      function formatLabel(value) {
+        const map = {
+          positive: "긍정",
+          neutral: "중립",
+          negative: "부정",
+          mixed: "혼합",
+          low: "낮음",
+          medium: "중간",
+          high: "높음",
+        };
+        return map[value] || value;
+      }
+
+      function renderNavigatorInsights() {
+        const toneCounts = getSentimentSnapshot();
+        const total = Object.values(toneCounts).reduce((sum, value) => sum + value, 0) || 1;
+        const dominantTone = Object.entries(toneCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "neutral";
+        document.getElementById("hero-tone").textContent = formatLabel(dominantTone);
+        const negativeAngle = Math.round(((toneCounts.negative || 0) / total) * 360);
+        const neutralAngle = negativeAngle + Math.round(((toneCounts.neutral || 0) / total) * 360);
+        const positiveAngle = neutralAngle + Math.round(((toneCounts.positive || 0) / total) * 360);
+        const heroDonut = document.getElementById("hero-sentiment-donut");
+        heroDonut.style.setProperty("--hero-neg-angle", `${negativeAngle}deg`);
+        heroDonut.style.setProperty("--hero-neu-angle", `${neutralAngle}deg`);
+        heroDonut.style.setProperty("--hero-pos-angle", `${positiveAngle}deg`);
+      }
+
+      function renderSummaryDashboard(marketPulse) {
+        renderSummaryActivityChart();
+        renderDistributionCharts();
+        const topSignals = (marketPulse.top_signals || []).slice(0, 5);
+        const signalBars = document.getElementById("summary-signal-bars");
+        if (!topSignals.length) {
+          signalBars.innerHTML = '<div class="tiny">현재 두드러진 신호가 많지 않습니다.</div>';
+        } else {
+          const max = Math.max(...topSignals.map(([, count]) => count), 1);
+          signalBars.innerHTML = topSignals.map(([label, count]) => `
+            <button class="signal-bar-row" type="button" data-summary-signal="${label}" style="border:none;background:none;padding:0;text-align:left;">
+              <label>${label}</label>
+              <div class="signal-bar-rail"><span style="width:${Math.round((count / max) * 100)}%;"></span></div>
+              <div class="signal-bar-value">${count}</div>
+            </button>
+          `).join("");
+          signalBars.querySelectorAll("[data-summary-signal]").forEach((button) => {
+            button.addEventListener("click", () => {
+              const label = button.dataset.summarySignal;
+              applyKeyword(label, label);
+            });
+          });
+        }
+        renderFunnelChart();
+      }
+
+      function renderDistributionCharts() {
+        renderDistributionDonutAndTrend({
+          counts: buildCounts("policy_risk", ["low", "medium", "high"]),
+          donutId: "policy-risk-donut",
+          donutValueId: "policy-risk-donut-value",
+          legendId: "policy-risk-legend",
+          trendId: "policy-risk-trend",
+          colors: { low: "risk-low", medium: "risk-medium", high: "risk-high" },
+          labels: { low: "낮음", medium: "중간", high: "높음" },
+        });
+        renderDistributionDonutAndTrend({
+          counts: buildCounts("market_impact", ["negative", "neutral", "positive", "mixed"]),
+          donutId: "market-impact-donut",
+          donutValueId: "market-impact-donut-value",
+          legendId: "market-impact-legend",
+          trendId: "market-impact-trend",
+          colors: { negative: "tone-negative", neutral: "tone-neutral", positive: "tone-positive", mixed: "tone-mixed" },
+          labels: { negative: "부정", neutral: "중립", positive: "긍정", mixed: "혼합" },
+        });
+      }
+
+      function buildCounts(field, keys) {
+        const counts = {};
+        keys.forEach((key) => { counts[key] = 0; });
+        issuesData.forEach((issue) => {
+          const value = issue[field] || keys[0];
+          counts[value] = (counts[value] || 0) + 1;
+        });
+        return counts;
+      }
+
+      function renderDistributionDonutAndTrend({ counts, donutId, donutValueId, legendId, trendId, colors, labels }) {
+        const total = Object.values(counts).reduce((sum, value) => sum + value, 0) || 1;
+        const center = document.getElementById(`${donutId}-center`);
+        document.getElementById(donutValueId).textContent = total;
+        if (center) center.classList.add("is-ready");
+        const keys = Object.keys(counts);
+        let start = 0;
+        const segments = keys.map((key) => {
+          const deg = Math.round(((counts[key] || 0) / total) * 360);
+          const end = start + deg;
+          const tuple = `${cssColorForClass(colors[key])} ${start}deg ${end}deg`;
+          start = end;
+          return tuple;
+        });
+        const donut = document.getElementById(donutId);
+        donut.style.background = `conic-gradient(${segments.join(", ")})`;
+        donut.classList.add("is-ready");
+        document.getElementById(legendId).innerHTML = keys.map((key) => `
+          <div class="distribution-row">
+            <label>${labels[key]}</label>
+            <div class="distribution-rail"><span class="${colors[key]}" style="width:${Math.round(((counts[key] || 0) / total) * 100)}%;"></span></div>
+            <div class="tiny">${counts[key] || 0}</div>
+          </div>
+        `).join("");
+        renderDistributionTrend(trendId, keys, colors);
+      }
+
+      function cssColorForClass(className) {
+        const map = {
+          "risk-low": "#88a4b7",
+          "risk-medium": "#59a1df",
+          "risk-high": "#13a198",
+          "tone-negative": "#f0b95a",
+          "tone-neutral": "#88a4b7",
+          "tone-positive": "#14a59a",
+          "tone-mixed": "#c79a48",
+        };
+        return map[className] || "#88a4b7";
+      }
+
+      function renderDistributionTrend(targetId, keys, colors) {
+        const svg = document.getElementById(targetId);
+        if (!svg) return;
+        svg.innerHTML = "";
+        const width = 300;
+        const height = 80;
+        const padding = { top: 10, right: 12, bottom: 16, left: 12 };
+        const buckets = new Map();
+        issuesData.forEach((issue) => {
+          const category = issue[targetId.includes("policy") ? "policy_risk" : "market_impact"];
+          Object.entries(issue.hourly_counts || {}).forEach(([hour, count]) => {
+            const bucket = buckets.get(hour) || {};
+            bucket[category] = (bucket[category] || 0) + count;
+            buckets.set(hour, bucket);
+          });
+        });
+        const sorted = Array.from(buckets.entries()).sort((a, b) => a[0].localeCompare(b[0])).slice(-6);
+        if (!sorted.length) return;
+        const max = Math.max(
+          ...sorted.flatMap(([, bucket]) => keys.map((key) => bucket[key] || 0)),
+          1,
+        );
+        const chartWidth = width - padding.left - padding.right;
+        const chartHeight = height - padding.top - padding.bottom;
+        const step = sorted.length === 1 ? 0 : chartWidth / (sorted.length - 1);
+        keys.forEach((key) => {
+          const points = sorted.map(([hour, bucket], index) => {
+            const x = padding.left + step * index;
+            const y = height - padding.bottom - (((bucket[key] || 0) / max) * chartHeight);
+            return `${x},${y}`;
+          }).join(" ");
+          const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+          polyline.setAttribute("fill", "none");
+          polyline.setAttribute("stroke", cssColorForClass(colors[key]));
+          polyline.setAttribute("stroke-width", "2.2");
+          polyline.setAttribute("points", points);
+          svg.appendChild(polyline);
+        });
+      }
+
+      function buildPromotionReason(issue) {
+        const recent30m = (issue.articles || []).filter((article) => {
+          const ts = new Date(article.collected_at || article.published_at);
+          return !Number.isNaN(ts.getTime()) && ts >= new Date(Date.now() - 30 * 60 * 1000);
+        }).length;
+        const sourceCount = new Set((issue.articles || []).map((article) => article.source)).size;
+        return `최근 30분 ${recent30m}건 · 출처 ${sourceCount}개 · 시그널 ${(issue.key_signals || []).length}개`;
+      }
+
+      function renderSummaryActivityChart() {
+        const svg = document.getElementById("summary-activity-chart");
+        const meta = document.getElementById("summary-activity-meta");
+        if (!svg) return;
+        svg.innerHTML = "";
+        const buckets = new Map();
+        issuesData.forEach((issue) => {
+          Object.entries(issue.hourly_counts || {}).forEach(([hour, count]) => {
+            buckets.set(hour, (buckets.get(hour) || 0) + count);
+          });
+        });
+        const sorted = Array.from(buckets.entries()).sort((a, b) => a[0].localeCompare(b[0])).slice(-8);
+        if (!sorted.length) {
+          meta.textContent = "최근 흐름 데이터가 충분하지 않습니다.";
+          return;
+        }
+        const max = Math.max(...sorted.map(([, count]) => count), 1);
+        const yTicks = buildYAxisTicks(max);
+        const width = 320;
+        const height = 160;
+        const padding = { top: 12, right: 14, bottom: 24, left: 28 };
+        const chartWidth = width - padding.left - padding.right;
+        const chartHeight = height - padding.top - padding.bottom;
+        const barWidth = chartWidth / sorted.length - 8;
+
+        yTicks.forEach((tick) => {
+          const ratio = max === 0 ? 0 : tick / max;
+          const y = height - padding.bottom - ratio * chartHeight;
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute("x1", padding.left);
+          line.setAttribute("x2", width - padding.right);
+          line.setAttribute("y1", y);
+          line.setAttribute("y2", y);
+          line.setAttribute("stroke", "rgba(18,32,42,0.08)");
+          line.setAttribute("stroke-width", "1");
+          svg.appendChild(line);
+
+          const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          label.setAttribute("x", String(padding.left - 8));
+          label.setAttribute("y", String(y + 3));
+          label.setAttribute("text-anchor", "end");
+          label.setAttribute("class", "axis-label");
+          label.textContent = String(tick);
+          svg.appendChild(label);
+        });
+
+        sorted.forEach(([hour, count], index) => {
+          const x = padding.left + index * (barWidth + 8);
+          const barHeight = Math.max(8, (count / max) * chartHeight);
+          const y = height - padding.bottom - barHeight;
+          const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+          rect.setAttribute("x", x);
+          rect.setAttribute("y", y);
+          rect.setAttribute("width", barWidth);
+          rect.setAttribute("height", barHeight);
+          rect.setAttribute("rx", "6");
+          rect.setAttribute("fill", index === sorted.length - 1 ? "#0d7a72" : "#2d6eb3");
+          rect.setAttribute("opacity", index === sorted.length - 1 ? "1" : "0.78");
+          svg.appendChild(rect);
+
+          const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          text.setAttribute("x", x + barWidth / 2);
+          text.setAttribute("y", height - 8);
+          text.setAttribute("text-anchor", "middle");
+          text.setAttribute("class", "axis-label");
+          text.textContent = hour.slice(11, 13);
+          svg.appendChild(text);
+        });
+        meta.textContent = `y축 기사 수 | 최근 8개 시간 버킷 | 마지막 버킷 강조`;
+      }
+
+      function renderFunnelChart() {
+        const metrics = runtimeData?.funnel_metrics || {};
+        const collected = Number(metrics.current_collected || 0);
+        const clustered = Number(metrics.current_clustered || 0);
+        const ready = Number(metrics.current_ready || 0);
+        const hold = Math.max(clustered - ready, 0);
+        const max = Math.max(collected, clustered, ready, hold, 1);
+        const funnel = document.getElementById("summary-funnel");
+        document.getElementById("funnel-meta").innerHTML = collected
+          ? `최근 24시간 평균 수집 ${metrics.avg_collected_24h || 0}건<br>평균 이슈화 ${metrics.avg_clustered_24h || 0}건<br>평균 READY율 ${metrics.avg_ready_rate_24h || 0}%`
+          : "최근 24시간 평균 수집 0건<br>평균 이슈화 0건<br>평균 READY율 0%";
+        const clusterRate = collected ? Math.round((clustered / collected) * 100) : 0;
+        const readyRate = clustered ? Math.round((ready / clustered) * 100) : 0;
+        const holdRate = clustered ? Math.round((hold / clustered) * 100) : 0;
+        funnel.innerHTML = [
+          ["수집", collected, "기준", "collect-step"],
+          ["클러스터링", clustered, `${clusterRate}% 전환`, "cluster-step"],
+          ["READY", ready, `${readyRate}% 채택`, "ready-step"],
+          ["HOLD", hold, `${holdRate}% 보류`, "hold-step"],
+        ].map(([label, value, pct, className]) => `
+          <div class="summary-funnel-card ${className}" style="--step-width:${Math.max(20, Math.round((value / max) * 100))}%;">
+            <strong>${label}</strong>
+            <div class="summary-funnel-inline"><span>${value}건</span><small>${pct}</small></div>
+          </div>
+        `).join("");
+      }
+
+      function renderChipButtons(container, items, classNames) {
+        if (!container) return;
+        container.innerHTML = "";
+        items.forEach(([label, count]) => {
+          const button = document.createElement("button");
+          button.className = classNames.join(" ");
+          button.dataset.filterKeyword = label;
+          button.textContent = `${label} · ${count}`;
+          button.addEventListener("click", () => applyKeyword(label, label));
+          container.appendChild(button);
+        });
+      }
+
+      function renderCombinedKeywordButtons(container, signalItems, keywordItems) {
+        if (!container) return;
+        container.innerHTML = "";
+        const seen = new Set();
+        [...signalItems.map((item) => ({ item, classNames: ["chip", "signal"] })), ...keywordItems.map((item) => ({ item, classNames: ["chip", "focus"] }))].forEach(({ item, classNames }) => {
+          const [label, count] = item;
+          if (seen.has(label)) return;
+          seen.add(label);
+          const button = document.createElement("button");
+          button.className = classNames.join(" ");
+          button.dataset.filterKeyword = label;
+          button.textContent = `${label} · ${count}`;
+          button.addEventListener("click", () => applyKeyword(label, label));
+          container.appendChild(button);
+        });
+      }
+
+      document.querySelectorAll("[data-view]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.view = button.dataset.view;
+          state.selectedIssueId = "";
+          document.querySelectorAll("[data-view]").forEach((item) => item.classList.remove("active"));
+          button.classList.add("active");
+          renderList();
+          scrollIssueListToTop();
+          const visible = getVisibleIssues();
+          if (state.explorerOpen && visible.length) openIssue(visible[0].id);
+        });
+      });
+
+      document.querySelectorAll('[data-summary-view]').forEach((button) => {
+        button.addEventListener('click', () => setSummaryView(button.dataset.summaryView));
+      });
+
+      document.getElementById('focus-open-button').addEventListener('click', () => {
+        const featured = getFeaturedIssue();
+        if (!featured) return;
+        setExplorerOpen(true);
+        openIssue(featured.id);
+        document.getElementById('explorer-shell').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+
+      document.getElementById('collapse-back-button').addEventListener('click', () => {
+        setExplorerOpen(false);
+        document.getElementById('focus-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+
+      document.querySelectorAll("[data-filter-keyword]").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          const label = chip.textContent.split(" · ")[0];
+          applyKeyword(label, label);
+        });
+      });
+
+      document.querySelectorAll("[data-sort]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.sort = button.dataset.sort;
+          document.querySelectorAll("[data-sort]").forEach((item) => item.classList.remove("active"));
+          button.classList.add("active");
+          renderList();
+          scrollIssueListToTop();
+          const visible = getVisibleIssues();
+          if (state.explorerOpen && visible.length) openIssue(visible[0].id);
+        });
+      });
+
+      setSummaryView(state.summaryView);
+      setExplorerOpen(false);
+      renderList();
+      updateSummaryMetrics();
+      renderFeaturedIssue();
+      clearDetailPanel();
+      setInterval(refreshStatus, 1000);
+      setInterval(refreshDashboardData, 10000);
+    </script>
+  </body>
+</html>

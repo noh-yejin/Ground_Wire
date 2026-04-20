@@ -1,0 +1,16 @@
+# env 파일
+.env
+
+# python
+__pycache__/
+*.pyc
+
+# mac
+.DS_Store
+
+# venv
+env/
+venv/
+
+# vscode
+.vscode/
