@@ -223,6 +223,8 @@ def _serialize_dashboard_issues(issues: list) -> list[dict]:
                 "policy_risk": issue.analysis.policy_risk.value,
                 "volatility_risk": issue.analysis.volatility_risk.value,
                 "hold_reason": issue.analysis.hold_reason,
+                "grounded": issue.analysis.grounded,
+                "grounding_details": _serialize_grounding_for_ui(issue.analysis.grounding_details),
                 "reliability_breakdown": {
                     "source_diversity": issue.reliability.source_diversity,
                     "recency": issue.reliability.recency,
@@ -261,6 +263,8 @@ def _serialize_issue_cards(issues: list) -> list[dict]:
             "policy_risk": issue.analysis.policy_risk.value,
             "volatility_risk": issue.analysis.volatility_risk.value,
             "risk_points": issue.analysis.risk_points,
+            "grounded": issue.analysis.grounded,
+            "grounding_details": _serialize_grounding_for_ui(issue.analysis.grounding_details),
             "sources": sorted({article.source for article in issue.articles}),
             "article_count": len(issue.articles),
             "updated_at": issue.updated_at.isoformat(),
@@ -277,6 +281,28 @@ def _serialize_issue_cards(issues: list) -> list[dict]:
         }
         for issue in issues
     ]
+
+
+def _serialize_grounding_for_ui(grounding_details: dict | None) -> dict:
+    details = grounding_details or {}
+    claims = []
+    for item in details.get("claims", [])[:6]:
+        claims.append(
+            {
+                "claim": item.get("claim"),
+                "support_count": item.get("support_count", 0),
+                "trusted_support_count": item.get("trusted_support_count", 0),
+                "external_support_count": item.get("external_support_count", 0),
+                "contradiction_count": item.get("contradiction_count", 0),
+                "score": item.get("score", 0),
+                "ready": item.get("ready", False),
+            }
+        )
+    return {
+        "claims": claims,
+        "grounding": details.get("grounding", {}),
+        "grounded_summary": details.get("grounded_summary", {}),
+    }
 
 
 def _build_market_pulse(issues: list, minutes: int = 15) -> dict:

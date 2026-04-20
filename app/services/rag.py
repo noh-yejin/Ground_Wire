@@ -99,10 +99,20 @@ class OpenAIEmbeddingStore:
 
 class EvidenceRetriever:
     def retrieve(self, articles: list[Article]) -> list[EvidenceSnippet]:
-        store = self._build_store()
-        store.add_articles(articles)
         query_text = " ".join(article.title for article in articles[:4])
-        retrieved = store.query(query_text, top_k=12)
+        return self.retrieve_with_query(articles, query_text=query_text)
+
+    def retrieve_with_query(
+        self,
+        articles: list[Article],
+        query_text: str,
+        top_k: int = 12,
+        corpus_articles: list[Article] | None = None,
+    ) -> list[EvidenceSnippet]:
+        store = self._build_store()
+        article_pool = self._merge_articles(articles, corpus_articles or [])
+        store.add_articles(article_pool)
+        retrieved = store.query(query_text, top_k=top_k)
 
         evidence = [
             EvidenceSnippet(
@@ -117,6 +127,30 @@ class EvidenceRetriever:
         filtered = self.filter(evidence)
         reranked = self.rerank(filtered)
         return reranked[:5]
+
+    def retrieve_for_claim(
+        self,
+        claim_text: str,
+        articles: list[Article],
+        corpus_articles: list[Article] | None = None,
+    ) -> list[EvidenceSnippet]:
+        return self.retrieve_with_query(articles, query_text=claim_text, top_k=14, corpus_articles=corpus_articles)
+
+    def retrieve_counter_evidence(
+        self,
+        claim_text: str,
+        articles: list[Article],
+        corpus_articles: list[Article] | None = None,
+    ) -> list[EvidenceSnippet]:
+        counter_query = f"{claim_text} 반박 부인 철회 논란 상충 아니다 사실무근"
+        return self.retrieve_with_query(articles, query_text=counter_query, top_k=10, corpus_articles=corpus_articles)
+
+    def retrieve_external_for_claim(self, claim_text: str, articles: list[Article], corpus_articles: list[Article]) -> list[EvidenceSnippet]:
+        cluster_ids = {article.id for article in articles}
+        external_articles = [article for article in corpus_articles if article.id not in cluster_ids]
+        if not external_articles:
+            return []
+        return self.retrieve_with_query(external_articles, query_text=claim_text, top_k=10)
 
     def source_weight(self, source: str) -> float:
         return source_weight(source)
@@ -147,6 +181,12 @@ class EvidenceRetriever:
             except Exception:
                 return SimpleVectorStore()
         return SimpleVectorStore()
+
+    def _merge_articles(self, articles: list[Article], extra_articles: list[Article]) -> list[Article]:
+        merged: dict[str, Article] = {}
+        for article in [*articles, *extra_articles]:
+            merged[article.id] = article
+        return list(merged.values())
 
 
 def _article_chunks(article: Article) -> list[str]:

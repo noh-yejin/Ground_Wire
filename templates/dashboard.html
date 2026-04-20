@@ -57,7 +57,7 @@
 
       .headline-band {
         display: grid;
-        grid-template-columns: minmax(300px, 0.62fr) minmax(660px, 1.38fr);
+        grid-template-columns: minmax(360px, 0.74fr) minmax(620px, 1.26fr);
         gap: 12px;
         align-items: stretch;
         margin-bottom: 14px;
@@ -145,7 +145,7 @@
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 8px;
-        margin-top: 12px;
+        margin-top: 20px;
       }
       .project-stat {
         min-height: 78px;
@@ -187,13 +187,21 @@
         text-align: center;
       }
       .evidence-title .eyebrow {
-        font-size: 1.16rem;
-        font-weight: 1500;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 1.28rem;
+        font-weight: 2000;
         letter-spacing: 0.14em;
+      }
+      .evidence-title .eyebrow .eyebrow-icon {
+        font-size: 1.2em;
+        line-height: 1;
       }
       .evidence-layout {
         display: grid;
-        grid-template-columns: minmax(230px, 0.72fr) minmax(190px, 0.58fr) minmax(0, 1.7fr);
+        grid-template-columns: minmax(280px, 0.9fr) minmax(190px, 0.54fr) minmax(0, 1.56fr);
         gap: 10px;
         align-items: stretch;
       }
@@ -278,6 +286,7 @@
         font-size: 0.72rem;
         font-weight: 800;
         color: var(--accent);
+        margin-bottom: 7px;
       }
 
       h1, h2, h3, h4, p { margin: 0; }
@@ -362,7 +371,7 @@
         display: grid;
         grid-template-rows: auto minmax(0, 1fr);
         gap: 12px;
-        padding: 0 20px 14px;
+        padding: 0 23px 14px;
       }
       .search-ranking-head {
         display: flex;
@@ -425,8 +434,8 @@
       }
       .search-ranking-label {
         min-width: 0;
-        font-size: 1rem;
-        font-weight: 800;
+        font-size: 0.9rem;
+        font-weight: 700;
         color: var(--ink);
         white-space: nowrap;
         overflow: hidden;
@@ -679,16 +688,20 @@
         background: linear-gradient(90deg, rgba(214,137,31,0.14), rgba(143,106,42,0.08));
       }
       .summary-funnel-card.collect-step {
-        background: linear-gradient(180deg, rgba(243, 248, 255, 0.96), rgba(255,255,255,0.98));
+        background: linear-gradient(180deg, rgba(255, 244, 239, 0.98), rgba(255,255,255,0.98));
+        border-color: rgba(181, 111, 74, 0.18);
       }
       .summary-funnel-card.cluster-step {
-        background: linear-gradient(180deg, rgba(241, 252, 250, 0.96), rgba(255,255,255,0.98));
+        background: linear-gradient(180deg, rgba(239, 248, 243, 0.98), rgba(255,255,255,0.98));
+        border-color: rgba(88, 136, 112, 0.18);
       }
       .summary-funnel-card.ready-step {
-        background: linear-gradient(180deg, rgba(243, 250, 248, 0.96), rgba(255,255,255,0.98));
+        background: linear-gradient(180deg, rgba(235, 247, 239, 0.98), rgba(255,255,255,0.98));
+        border-color: rgba(66, 138, 92, 0.18);
       }
       .summary-funnel-card.hold-step {
-        background: linear-gradient(180deg, rgba(255, 249, 239, 0.98), rgba(255,255,255,0.98));
+        background: linear-gradient(180deg, rgba(255, 243, 235, 0.98), rgba(255,255,255,0.98));
+        border-color: rgba(181, 111, 74, 0.18);
       }
       .summary-funnel-card > * {
         position: relative;
@@ -760,7 +773,7 @@
         grid-template-columns: 72px 0.95fr;
         gap: 100px;
         align-items: center;
-        margin-top: 8px;
+        margin-top: 25px;
       }
       .mini-donut {
         width: 150px;
@@ -839,9 +852,9 @@
       }
       .summary-activity-chart {
         width: 80%;
-        height: 95%;
+        height: 90%;
         aspect-ratio: 320 / 160;
-        max-height: 220px;
+        max-height: 230px;
         display: block;
         margin: 0 auto;
         border-radius: 12px;
@@ -1407,6 +1420,21 @@
         border-color: rgba(71, 90, 109, 0.14);
         color: #4c5e70;
       }
+      .stat-pill.verify-pill {
+        background: rgba(13, 122, 114, 0.12);
+        border-color: rgba(13, 122, 114, 0.16);
+        color: #085f59;
+      }
+      .stat-pill.conflict-pill {
+        background: rgba(198, 121, 16, 0.12);
+        border-color: rgba(198, 121, 16, 0.18);
+        color: #8a5208;
+      }
+      .stat-pill.external-pill {
+        background: rgba(45, 110, 179, 0.12);
+        border-color: rgba(45, 110, 179, 0.18);
+        color: #245a91;
+      }
       .row-summary {
         margin-top: 11px;
         color: var(--ink);
@@ -1602,6 +1630,8 @@
         .wrap { height: auto; }
         .topbar { grid-template-columns: 1fr; }
         .evidence-layout { grid-template-columns: 1fr; }
+        .focus-panel { grid-template-columns: 1fr; width: 100%; }
+        .focus-right { grid-template-columns: 1fr 1fr; grid-template-rows: none; }
         .summary-grid { grid-template-columns: 1fr; }
         .summary-visual-grid { grid-template-columns: 1fr; }
         .funnel-chart { grid-template-columns: 1fr 1fr; }
@@ -1613,6 +1643,12 @@
 
       @media (max-width: 980px) {
         .app-shell, .hero-stat-row { grid-template-columns: 1fr; height: auto; }
+        .focus-panel { padding: 20px 18px; }
+        .focus-topic-text { font-size: 2.15rem; }
+        .focus-meta-strip { grid-template-columns: 1fr; }
+        .focus-right { grid-template-columns: 1fr; grid-template-rows: auto auto; }
+        .focus-market-row { grid-template-columns: minmax(0, 1fr) 72px auto; gap: 10px; }
+        .focus-cta-copy strong { font-size: 1.34rem; }
         .funnel-chart { grid-template-columns: 1fr; }
         .shell-panel, .list-panel, .detail-panel { height: auto; }
         .list-frame, .panel-scroll { height: auto; }
@@ -1735,14 +1771,13 @@
         border: 1px solid rgba(198, 121, 16, 0.18);
         border-radius: 22px;
         box-shadow: 0 14px 32px rgba(18, 32, 42, 0.08);
-        padding: 28px 30px;
-        min-height: 208px;
+        padding: 16px 18px;
+        min-height: 270px;
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 130px;
+        grid-template-columns: minmax(0, 1.08fr) minmax(250px, 0.7fr);
         gap: 12px;
-        align-items: start;
-        justify-content: space-between;
-        width: min(1040px, 100%);
+        align-items: stretch;
+        width: min(1160px, 100%);
         margin: 0 auto;
         position: relative;
         overflow: hidden;
@@ -1754,93 +1789,321 @@
         top: 0;
         bottom: 0;
         width: 8px;
-        background: linear-gradient(180deg, #d1a13a, #0d7a72);
+        background: linear-gradient(180deg, #f6c968, #1a958d);
       }
       .focus-panel .eyebrow {
-        font-size: 1.16rem;
-        font-weight: 1500;
-        letter-spacing: 0.14em;
+        font-size: 0.8rem;
+        font-weight: 900;
+        letter-spacing: 0.16em;
         color: var(--accent);
-        text-align: center;
+        text-transform: uppercase;
       }
       .focus-copy {
         display: grid;
-        gap: 10px;
-        max-width: 980px;
-        padding-left: 10px;
+        gap: 12px;
+        max-width: none;
+        padding-left: 25px;
+        align-content: start;
       }
-      .focus-panel h2 {
-        font-size: 1.35rem;
-        line-height: 1.07;
-        font-weight: 600;
-        letter-spacing: -0.025em;
-        max-width: 980px;
+      .focus-topline {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 2px;
+      }
+      .focus-topline .focus-accent {
+        font-size: 1.12rem;
+        font-weight: 800;
+        color: #d28a1f;
+        letter-spacing: -0.01em;
+      }
+      .focus-topic-text {
+        margin: 0;
+        font-size: 1.7rem;
+        line-height: 0.94;
+        font-weight: 900;
+        letter-spacing: -0.05em;
+        max-width: none;
+        margin-bottom: 2px;
       }
       .focus-summary {
-        color: var(--ink);
-        font-size: 0.92rem;
-        line-height: 1.55;
+        margin: 0;
+        font-size: 0.86rem;
+        line-height: 1.22;
         font-weight: 700;
-        max-width: 980px;
+        max-width: none;
+        color: rgba(18, 32, 42, 0.62);
+        margin-bottom: 4px;
       }
-      .focus-kicker {
-        display: inline-flex;
+      .focus-meta-strip {
+        display: flex;
+        /* grid-template-columns: repeat(3, minmax(0, 1fr)); */
+        flex-wrap: wrap;
+        gap: 20px;
+        /* margin-top: -2px; */
+      }
+      .focus-meta-pill {
+        display: grid;
+        grid-template-columns: 40px minmax(0, 1fr);
         align-items: center;
-        width: fit-content;
-        padding: 6px 10px;
+        gap: 3px;
+        padding: 5px 10px;
+        border-radius: 13px;
+        border: 1px solid rgba(200, 211, 218, 0.66);
+        background: rgba(251, 248, 242, 0.96);
+        min-height: 46px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #5f6774;
+      }
+      .focus-meta-pill::before {
+        content: attr(data-icon);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
         border-radius: 999px;
-        background: rgba(13, 122, 114, 0.08);
-        border: 1px solid rgba(13, 122, 114, 0.12);
-        color: var(--accent);
+        background: rgba(255,255,255,0.9);
+        font-size: 0.72rem;
+      }
+      .focus-meta-pill strong {
+        display: block;
+        font-size: 0.6rem;
+        font-weight: 900;
+        color: rgba(18, 32, 42, 0.68);
+        margin-bottom: 1px;
+      }
+      .focus-meta-pill span {
+        display: block;
         font-size: 0.72rem;
         font-weight: 900;
-        letter-spacing: 0.03em;
+        color: var(--ink);
+      }
+      .focus-meta-pill.positive {
+        color: #3f6f66;
+        background: rgba(233, 242, 236, 0.98);
+        border-color: rgba(91, 132, 118, 0.2);
+      }
+      .focus-meta-pill.warn {
+        color: #94683c;
+        background: rgba(248, 239, 226, 0.98);
+        border-color: rgba(169, 125, 78, 0.2);
+      }
+      .focus-trust-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 0;
+        padding: 7px 9px;
+        border-radius: 14px;
+        border: 1px solid rgba(223, 227, 232, 0.85);
+        background: rgba(255,255,255,0.82);
+      }
+      .focus-trust-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(124, 137, 152, 0.16);
+        background: rgba(243, 246, 248, 0.96);
+        font-size: 0.64rem;
+        font-weight: 800;
+        color: #5c6570;
+      }
+      .focus-trust-pill.strong {
+        color: #2f6a7c;
+        background: rgba(231, 241, 245, 0.98);
+        border-color: rgba(74, 124, 140, 0.18);
+      }
+      .focus-trust-pill.warn {
+        color: #8e5b49;
+        background: rgba(247, 236, 231, 0.98);
+        border-color: rgba(150, 101, 79, 0.18);
       }
       .focus-points {
         display: grid;
-        gap: 8px;
-        margin-top: 2px;
-        max-width: 980px;
+        gap: 16px;
+        margin-top: 0;
+        max-width: none;
+        padding-top: 8px;
+        border-top: 1px solid rgba(223, 227, 232, 0.92);
       }
       .focus-point {
         display: flex;
-        gap: 8px;
-        align-items: start;
+        gap: 10px;
+        align-items: flex-start;
         color: var(--ink);
-        font-size: 0.84rem;
-        line-height: 1.38;
-        font-weight: 700;
+        font-size: 0.8rem;
+        line-height: 1.18;
+        font-weight: 800;
       }
       .focus-point::before {
         content: "•";
         color: var(--accent);
         font-weight: 900;
+        margin-top: 2px;
       }
-      .focus-actions {
+      .focus-point-copy {
         display: grid;
-        gap: 6px;
-        justify-items: center;
-        align-content: center;
-        justify-self: center;
-        align-self: center;
-        min-width: 130px;
-        padding-top: 0;
+        gap: 3px;
+      }
+      .focus-point-copy small {
+        font-size: 0.68rem;
+        line-height: 1.1;
+        color: rgba(18, 32, 42, 0.52);
+        font-weight: 600;
+      }
+      .focus-right {
+        display: grid;
+        grid-template-rows: minmax(0, 1fr) auto;
+        gap: 8px;
+        min-width: 0;
+        max-width: none;
+        width: 95%;
+        justify-self: start;
+      }
+      .focus-market-card {
+        border-radius: 18px;
+        border: 1px solid rgba(223, 227, 232, 0.95);
+        background: rgba(255,255,255,0.92);
+        padding: 14px 20px;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+        display: grid;
+        gap: 4px;
+        align-content: start;
+      }
+      .focus-market-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .focus-market-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 0.84rem;
+        font-weight: 900;
+        color: var(--ink);
+      }
+      .focus-market-title::before {
+        content: "▮▮▮";
+        font-size: 0.88rem;
+        letter-spacing: -0.16em;
+        color: var(--accent);
+      }
+      .focus-market-updated {
+        font-size: 0.64rem;
+        font-weight: 700;
+        color: rgba(18, 32, 42, 0.38);
+      }
+      .focus-market-list {
+        display: grid;
+      }
+      .focus-market-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 64px auto;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 0;
+        border-top: 1px solid rgba(233, 236, 239, 0.95);
+      }
+      .focus-market-row:first-child {
+        border-top: 0;
+        padding-top: 2px;
+      }
+      .focus-market-label strong {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 900;
+        color: var(--ink);
+        letter-spacing: -0.02em;
+      }
+      .focus-market-label span {
+        display: block;
+        margin-top: 1px;
+        font-size: 0.64rem;
+        color: rgba(18, 32, 42, 0.48);
+        font-weight: 700;
+      }
+      .focus-market-spark {
+        width: 64px;
+        height: 18px;
+      }
+      .focus-market-value {
+        text-align: right;
+      }
+      .focus-market-value strong {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 900;
+        color: var(--ink);
+      }
+      .focus-market-value span {
+        display: block;
+        margin-top: 1px;
+        font-size: 0.66rem;
+        font-weight: 800;
+      }
+      .focus-market-value span.positive {
+        color: #2f7b5c;
+      }
+      .focus-market-value span.warn {
+        color: #b36c2f;
+      }
+      .focus-market-value span.neutral {
+        color: rgba(18, 32, 42, 0.46);
       }
       .focus-cta {
-        border: 1px solid rgba(198, 121, 16, 0.24);
+        border: 1px solid rgba(198, 121, 16, 0.22);
         background: linear-gradient(180deg, #d89a24, #b87812);
         color: #fff;
-        padding: 12px 18px;
-        border-radius: 999px;
-        font-weight: 900;
-        font-size: 0.84rem;
+        padding: 8px 15px;
+        border-radius: 18px;
         box-shadow: 0 12px 22px rgba(184, 120, 18, 0.18);
+        display: grid;
+        grid-template-columns: 38px minmax(0, 1fr) 12px;
+        gap: 8px;
+        align-items: center;
+        width: 60%;
+        min-width: 156px;
+        text-align: left;
         justify-self: center;
-        text-align: center;
-        min-width: 132px;
+        align-self: end;
+        margin-top: 10px;
       }
-      .focus-helper {
-        display: none;
+      .focus-cta-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.96);
+        color: #c27d12;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+      }
+      .focus-cta-copy strong {
+        display: block;
+        font-size: 0.84rem;
+        line-height: 1.02;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+      }
+      .focus-cta-copy span {
+        display: block;
+        margin-top: 1px;
+        font-size: 0.66rem;
+        line-height: 1.08;
+        font-weight: 700;
+        color: rgba(255,255,255,0.88);
+      }
+      .focus-cta-arrow {
+        font-size: 1rem;
+        line-height: 1;
+        font-weight: 700;
       }
       .focus-cta:disabled {
         opacity: 0.5;
@@ -1922,14 +2185,31 @@
         <section class="focus-band">
           <article class="focus-panel" id="focus-panel">
             <div class="focus-copy">
-              <div class="eyebrow">Focus Issue</div>
-              <h2 id="focus-topic">핵심 이슈를 정리하고 있습니다</h2>
+              <div class="focus-topline">
+                <div class="focus-accent">핵심 이슈</div>
+              </div>
+              <h2 class="focus-topic-text" id="focus-topic">핵심 이슈를 정리하고 있습니다</h2>
               <p class="focus-summary" id="focus-summary">가장 먼저 봐야 할 이슈를 고르는 중입니다.</p>
-              <div class="focus-kicker">지금 가장 중요한 이슈</div>
+              <div class="focus-meta-strip" id="focus-meta-strip"></div>
               <div class="focus-points" id="focus-points"></div>
+              <div class="focus-trust-strip" id="focus-trust-strip"></div>
             </div>
-            <div class="focus-actions">
-              <button class="focus-cta" id="focus-open-button" type="button">이슈 분석 보기</button>
+            <div class="focus-right">
+              <div class="focus-market-card">
+                <div class="focus-market-head">
+                  <div class="focus-market-title">실시간 시장 요약</div>
+                  <div class="focus-market-updated" id="focus-market-updated">업데이트 대기</div>
+                </div>
+                <div class="focus-market-list" id="focus-market-list"></div>
+              </div>
+              <button class="focus-cta" id="focus-open-button" type="button">
+                <div class="focus-cta-icon">🗎</div>
+                <div class="focus-cta-copy">
+                  <strong>이슈 분석 더 보기</strong>
+                  <span>심층 분석 확인</span>
+                </div>
+                <div class="focus-cta-arrow">›</div>
+              </button>
             </div>
           </article>
         </section>
@@ -1945,7 +2225,7 @@
         <article class="evidence-panel">
           <div class="evidence-head">
             <div class="evidence-title">
-              <div class="eyebrow">Signals & Summary</div>
+              <div class="eyebrow"><span class="eyebrow-icon">📡</span><span>뉴스 신호 종합 분석</span></div>
             </div>
           </div>
 
@@ -1960,19 +2240,19 @@
                   <div class="search-ranking-updated" id="search-ranking-updated">업데이트 대기</div>
                 </div>
                 <div class="search-ranking-grid" id="search-ranking-list">
-                  <div class="search-ranking-fallback">검색어 순위를 계산하는 중입니다.</div>
+                  <div class="search-ranking-fallback">키워드 순위를 계산하는 중입니다.</div>
                 </div>
               </div>
             </section>
 
             <section class="evidence-block funnel-shell">
               <div class="summary-inline-funnel">
-                <div class="summary-funnel-title">처리 흐름</div>
+                <div class="summary-funnel-title">검증 현황</div>
                 <div class="summary-funnel-strip" id="summary-funnel">
-                  <div class="summary-funnel-card loading-placeholder collect-step"><strong>수집</strong><div class="summary-funnel-inline"><span>로딩 중...</span></div></div>
-                  <div class="summary-funnel-card loading-placeholder cluster-step"><strong>클러스터링</strong><div class="summary-funnel-inline"><span>로딩 중...</span></div></div>
-                  <div class="summary-funnel-card loading-placeholder ready-step"><strong>READY</strong><div class="summary-funnel-inline"><span>로딩 중...</span></div></div>
-                  <div class="summary-funnel-card loading-placeholder hold-step"><strong>HOLD</strong><div class="summary-funnel-inline"><span>로딩 중...</span></div></div>
+                  <div class="summary-funnel-card loading-placeholder ready-step"><strong>검증 완료</strong><div class="summary-funnel-inline"><span>로딩 중...</span></div></div>
+                  <div class="summary-funnel-card loading-placeholder hold-step"><strong>검토 필요</strong><div class="summary-funnel-inline"><span>로딩 중...</span></div></div>
+                  <div class="summary-funnel-card loading-placeholder cluster-step"><strong>외부 근거</strong><div class="summary-funnel-inline"><span>로딩 중...</span></div></div>
+                  <div class="summary-funnel-card loading-placeholder collect-step"><strong>상충 감지</strong><div class="summary-funnel-inline"><span>로딩 중...</span></div></div>
                 </div>
                 <div class="tiny loading-copy" id="funnel-meta">로딩 중...</div>
               </div>
@@ -2069,7 +2349,7 @@
                   <h2 id="list-title">관련 이슈</h2>
                   <div class="toolbar">
                     <div class="segment">
-                      <button class="active" data-sort="reliability">신뢰도</button>
+                      <button class="active" data-sort="reliability">신뢰 점수</button>
                       <button data-sort="latest">최신순</button>
                       <button data-sort="volume">기사수</button>
                     </div>
@@ -2098,7 +2378,7 @@
                 </div>
 
                 <div class="block">
-                  <h3>신뢰도 분해</h3>
+                  <h3>신뢰 검증 분해</h3>
                   <div class="breakdown-grid" id="detail-reliability-breakdown"></div>
                 </div>
 
@@ -2134,9 +2414,11 @@
 
     <script id="issues-data" type="application/json">{{ issues_json | safe }}</script>
     <script id="runtime-data" type="application/json">{{ runtime_status | tojson | safe }}</script>
+    <script id="market-pulse-data" type="application/json">{{ market_pulse | tojson | safe }}</script>
     <script>
       let issuesData = JSON.parse(document.getElementById("issues-data").textContent);
       let runtimeData = JSON.parse(document.getElementById("runtime-data").textContent);
+      let marketPulseData = JSON.parse(document.getElementById("market-pulse-data").textContent);
       const state = {
         view: "priority",
         keyword: "",
@@ -2179,6 +2461,97 @@
           .filter(issueMatchesKeyword);
         return sortIssues(filtered);
       }
+      function getGroundingMetrics(issue) {
+        const grounding = issue.grounding_details?.grounding || {};
+        const claims = issue.grounding_details?.claims || [];
+        const issueScore = Number(grounding.issue_score ?? issue.reliability ?? 0);
+        const groundedRatio = Number(grounding.grounded_ratio ?? 0);
+        const contradictionRatio = Number(grounding.contradiction_ratio ?? 0);
+        const externalSupportClaims = claims.filter((item) => Number(item.external_support_count || 0) > 0).length;
+        const readyClaims = claims.filter((item) => item.ready).length;
+        return {
+          issueScore,
+          groundedRatio,
+          contradictionRatio,
+          externalSupportClaims,
+          readyClaims,
+          totalClaims: claims.length,
+          reasons: grounding.reasons || [],
+        };
+      }
+      function compactPoint(rawValue, maxLength = 34) {
+        const compact = String(rawValue || "").replace(/^[-•]\s*/, "").trim();
+        if (compact.length <= maxLength) return compact;
+        return `${compact.slice(0, maxLength).trim()}...`;
+      }
+      function buildFocusSparkline(values, tone = "neutral") {
+        const safeValues = (values || []).map((value) => Number(value || 0));
+        const points = safeValues.length ? safeValues : [1, 2, 1, 3, 2, 4, 3, 2];
+        const max = Math.max(...points, 1);
+        const step = points.length > 1 ? 80 / (points.length - 1) : 80;
+        const color = tone === "positive" ? "#2f7b5c" : tone === "warn" ? "#b36c2f" : "#5d7284";
+        const d = points.map((value, index) => {
+          const x = 4 + (step * index);
+          const y = 22 - ((value / max) * 14);
+          return `${index === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`;
+        }).join(" ");
+        return `
+          <svg class="focus-market-spark" viewBox="0 0 88 28" preserveAspectRatio="none" aria-hidden="true">
+            <path d="${d}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        `;
+      }
+      function getIssueTrendValues(issue) {
+        const entries = Object.entries(issue?.hourly_counts || {}).sort((a, b) => a[0].localeCompare(b[0]));
+        return entries.slice(-8).map(([, value]) => Number(value || 0));
+      }
+      function buildFocusMarketRows(issue) {
+        const summaryParts = marketPulseData?.summary_parts || {};
+        const rising = marketPulseData?.rising_keyword || null;
+        const trendValues = getIssueTrendValues(issue);
+        const tone = issue.market_impact === "positive" ? "positive" : issue.policy_risk === "high" ? "warn" : "neutral";
+        const topSignal = Array.isArray(marketPulseData?.top_signals) && marketPulseData.top_signals.length
+          ? marketPulseData.top_signals[0]
+          : null;
+        const topKeyword = Array.isArray(marketPulseData?.top_keywords) && marketPulseData.top_keywords.length
+          ? marketPulseData.top_keywords[0]
+          : null;
+        return [
+          {
+            label: "기사 반영",
+            sublabel: `${marketPulseData?.window_minutes || 15}분 기준`,
+            value: summaryParts.article_label || `${issue.articles?.length || 0}건`,
+            change: `${issue.articles?.length || 0}건`,
+            tone,
+          },
+          {
+            label: "핵심 신호",
+            sublabel: topSignal ? `언급 ${topSignal[1]}회` : "신호 대기",
+            value: compactPoint(summaryParts.signal_label || issue.key_signals?.slice(0, 2).join(" · ") || "신호 대기", 18),
+            change: topSignal ? `+${topSignal[1]}` : "0",
+            tone: "neutral",
+          },
+          {
+            label: "상승 키워드",
+            sublabel: rising?.movement === "up" ? "상승 흐름" : rising?.movement === "new" ? "신규 진입" : "추이 관찰",
+            value: compactPoint(rising?.label || topKeyword?.[0] || summaryParts.keyword_label || "키워드 대기", 18),
+            change: rising?.delta ? `${rising.movement === "down" ? "▼" : "▲"}${rising.delta}` : (topKeyword ? `${topKeyword[1]}회` : "대기"),
+            tone: rising?.movement === "down" ? "warn" : "positive",
+          },
+        ].map((row) => `
+          <div class="focus-market-row">
+            <div class="focus-market-label">
+              <strong>${row.label}</strong>
+              <span>${row.sublabel}</span>
+            </div>
+            ${buildFocusSparkline(trendValues, row.tone)}
+            <div class="focus-market-value">
+              <strong>${row.value}</strong>
+              <span class="${row.tone}">${row.change}</span>
+            </div>
+          </div>
+        `).join("");
+      }
       function getFeaturedIssue() {
         const priorityReady = sortIssues(
           issuesData
@@ -2211,20 +2584,30 @@
         const issue = getFeaturedIssue();
         const topic = document.getElementById('focus-topic');
         const summary = document.getElementById('focus-summary');
+        const metaStrip = document.getElementById('focus-meta-strip');
         const points = document.getElementById('focus-points');
+        const trustStrip = document.getElementById('focus-trust-strip');
+        const marketList = document.getElementById('focus-market-list');
+        const marketUpdated = document.getElementById('focus-market-updated');
         const button = document.getElementById('focus-open-button');
         if (!issue) {
           topic.textContent = '핵심 이슈를 정리하고 있습니다';
           summary.textContent = '지금은 표시할 이슈가 없습니다.';
+          metaStrip.innerHTML = '';
           points.innerHTML = '';
+          trustStrip.innerHTML = '';
+          trustStrip.style.display = 'none';
+          marketList.innerHTML = '<div class="tiny">시장 요약을 준비 중입니다.</div>';
+          marketUpdated.textContent = '업데이트 대기';
           button.disabled = true;
           return;
         }
         button.disabled = false;
         button.dataset.issueId = issue.id;
-        const keySignal = issue.key_signals?.[0];
+        const grounding = getGroundingMetrics(issue);
+        const keySignal = issue.key_signals?.[0] || "";
         const impactLabel = formatLabel(issue.market_impact);
-        const topicLabel = issue.topic.split('·').map((part) => part.trim()).filter(Boolean).slice(0, 2).join(' · ') || issue.topic;
+        const topicLabel = String(issue.topic || "").split('·').map((part) => part.trim()).filter(Boolean).slice(0, 2).join(' · ') || issue.topic;
         const impactHeadline = {
           positive: '상승 신호 확산',
           negative: '하방 리스크 확대',
@@ -2232,15 +2615,32 @@
           neutral: '핵심 변수 부상',
         };
         const headline = keySignal ? `${topicLabel}, ${keySignal} 부각` : `${topicLabel}, ${impactHeadline[issue.market_impact] || '핵심 이슈 부상'}`;
-        const shortSummary = (issue.summary || '').split(/(?<=[.!?다])\s+/)[0] || issue.summary;
-        const pointSource = (issue.key_points && issue.key_points.length ? issue.key_points : (issue.articles || []).slice(0, 3).map((article) => article.title)).slice(0, 3);
+        const shortSummary = compactPoint(issue.summary, 118);
+        const relatedArticles = (issue.articles || []).slice(0, 2).map((article, index) => ({
+          title: compactPoint(article.title, 74),
+          sub: compactPoint(issue.key_points?.[index] || `${article.source} · ${formatCompactDateTime(article.published_at)}`, 72),
+        }));
         topic.textContent = headline;
-        const summaryLines = [`${shortSummary}`, `현재 영향은 ${impactLabel}, 정책 리스크는 ${formatLabel(issue.policy_risk)}입니다.`].filter(Boolean);
-        summary.innerHTML = summaryLines.map((line) => `<span>${line}</span>`).join('<br>');
-        points.innerHTML = pointSource
-          .map((point) => String(point).replace(/^[-•]\s*/, '').trim())
-          .map((point) => `<div class="focus-point">${point}</div>`)
+        summary.textContent = shortSummary;
+        metaStrip.innerHTML = `
+          <span class="focus-meta-pill ${issue.market_impact === "positive" ? "positive" : issue.market_impact === "negative" ? "warn" : ""}" data-icon="📊"><div><strong>시장 영향</strong><span>${impactLabel}</span></div></span>
+          <span class="focus-meta-pill ${issue.policy_risk === "high" ? "warn" : issue.policy_risk === "low" ? "positive" : ""}" data-icon="⚠"><div><strong>정책 리스크</strong><span>${formatLabel(issue.policy_risk)}</span></div></span>
+          <span class="focus-meta-pill ${grounding.groundedRatio >= 0.5 ? "positive" : "warn"}" data-icon="✔"><div><strong>검증율</strong><span>${Math.round(grounding.groundedRatio * 100)}%</span></div></span>
+        `;
+        trustStrip.innerHTML = '';
+        trustStrip.style.display = 'none';
+        points.innerHTML = relatedArticles
+          .map((article) => `
+            <div class="focus-point">
+              <div class="focus-point-copy">
+                <div>${article.title}</div>
+                <small>${article.sub}</small>
+              </div>
+            </div>
+          `)
           .join('');
+        marketList.innerHTML = buildFocusMarketRows(issue);
+        marketUpdated.textContent = runtimeData?.latest_collect?.created_at_display || '업데이트 대기';
       }
 
       function renderList() {
@@ -2253,7 +2653,7 @@
           general: "일반 모니터링 이슈를 표시합니다.",
           all: "모든 이슈를 통합해서 보여줍니다.",
         };
-        const sortLabelMap = { reliability: "신뢰도순", latest: "최신순", volume: "기사수순" };
+        const sortLabelMap = { reliability: "신뢰 점수순", latest: "최신순", volume: "기사수순" };
 
         document.getElementById("list-title").textContent = titleMap[state.view];
         document.getElementById("list-meta-text").textContent = `${copyMap[state.view]} 현재 ${issues.length}건`;
@@ -2269,6 +2669,7 @@
 
         container.innerHTML = issues
           .map((issue) => {
+            const grounding = getGroundingMetrics(issue);
             const signalTags = (issue.key_signals || []).slice(0, 3).map((signal) => `<span class="tag signal">${signal}</span>`).join("");
             const keywordTags = (issue.keywords || []).slice(0, 4).map((keyword) => `<span class="tag">${keyword}</span>`).join("");
             const keywordBlock = (signalTags || keywordTags)
@@ -2280,7 +2681,11 @@
                   <div>
                     <div class="row-topic">${issue.topic}</div>
                     <div class="row-stats">
-                      <span class="stat-pill reliability-pill">reliability ${issue.reliability}</span>
+                      <span class="stat-pill reliability-pill">trust ${grounding.issueScore.toFixed(2)}</span>
+                      <span class="stat-pill verify-pill">검증 ${Math.round(grounding.groundedRatio * 100)}%</span>
+                      <span class="stat-pill ${grounding.contradictionRatio > 0 ? "conflict-pill" : ""}">상충 ${Math.round(grounding.contradictionRatio * 100)}%</span>
+                      <span class="stat-pill ${grounding.externalSupportClaims > 0 ? "external-pill" : ""}">외부 ${grounding.externalSupportClaims}건</span>
+                      <span class="stat-pill">claims ${grounding.readyClaims}/${grounding.totalClaims || 0}</span>
                       <span class="stat-pill ${issue.priority === "priority" ? "focus-pill" : ""}">${issue.priority}</span>
                       <span class="stat-pill sentiment-pill">영향 ${formatLabel(issue.market_impact)}</span>
                       <span class="stat-pill">정책 ${formatLabel(issue.policy_risk)}</span>
@@ -2309,12 +2714,14 @@
         renderList();
         renderDetail(found, "이슈 상세");
         const keyword = found.key_signals?.[0] || found.keywords?.[0] || found.topic;
-        if (keyword) renderTrend(keyword.toLowerCase(), keyword);
+        const keywordDisplay = found.key_signals?.[0] || found.keywords?.[0] || found.topic;
+        if (keyword) renderTrend(keyword.toLowerCase(), keywordDisplay);
       }
 
       function renderDetail(issue, contextLabel) {
+        const grounding = getGroundingMetrics(issue);
         document.getElementById("detail-topic").textContent = issue.topic;
-        document.getElementById("detail-meta").textContent = `${contextLabel} | ${issue.status} | ${issue.priority} | reliability ${issue.reliability}`;
+        document.getElementById("detail-meta").textContent = `${contextLabel} | ${issue.status} | ${issue.priority} | trust ${grounding.issueScore.toFixed(2)} | 검증 ${Math.round(grounding.groundedRatio * 100)}%`;
         document.getElementById("detail-summary").textContent = issue.summary;
 
         const signals = document.getElementById("detail-signals");
@@ -2333,6 +2740,9 @@
         reliabilityBreakdown.innerHTML = "";
 
         [
+          ["신뢰 점수", grounding.issueScore.toFixed(2), grounding.issueScore >= 0.75 ? "impact-positive" : grounding.issueScore >= 0.6 ? "impact-mixed" : "impact-negative"],
+          ["검증 상태", issue.grounded ? "Grounded" : "Review", issue.grounded ? "impact-positive" : "impact-mixed"],
+          ["외부 근거", `${grounding.externalSupportClaims}개`, grounding.externalSupportClaims > 0 ? "impact-positive" : "impact-neutral"],
           ["시장 영향", issue.market_impact, `impact-${issue.market_impact}`],
           ["정책 리스크", issue.policy_risk, `risk-${issue.policy_risk}`],
           ["변동성", issue.volatility_risk, `risk-${issue.volatility_risk}`],
@@ -2344,12 +2754,16 @@
         });
 
         const breakdown = issue.reliability_breakdown || {};
-        [
+        const recommendedRows = [
+          ["신뢰", grounding.issueScore],
+          ["검증", grounding.groundedRatio],
+          ["상충", Math.max(0, 1 - grounding.contradictionRatio)],
+          ["외부근거", grounding.totalClaims ? grounding.externalSupportClaims / grounding.totalClaims : 0],
+          ["claims", grounding.totalClaims ? grounding.readyClaims / grounding.totalClaims : 0],
           ["출처", breakdown.source_diversity],
           ["최신성", breakdown.recency],
-          ["근거", breakdown.evidence_coverage],
-          ["교차검증", breakdown.cross_source_confirmation],
-        ].forEach(([label, value]) => {
+        ];
+        recommendedRows.forEach(([label, value]) => {
           const safe = Math.max(0, Math.min(Number(value || 0), 1));
           const row = document.createElement("div");
           row.className = "breakdown-row";
@@ -2376,13 +2790,19 @@
         (issue.key_points || []).forEach((item) => {
           const div = document.createElement("div");
           div.className = "detail-item";
-          div.textContent = item;
+          div.textContent = compactPoint(item, 44);
           points.appendChild(div);
         });
         (issue.risk_points || []).forEach((item) => {
           const div = document.createElement("div");
           div.className = "detail-item";
           div.textContent = item;
+          risks.appendChild(div);
+        });
+        (grounding.reasons || []).forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "detail-item";
+          div.textContent = `[검증] ${item}`;
           risks.appendChild(div);
         });
         (issue.articles || []).forEach((article) => {
@@ -2523,9 +2943,9 @@
           return sorted.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
         }
         if (state.sort === "volume") {
-          return sorted.sort((a, b) => (b.articles?.length || 0) - (a.articles?.length || 0) || b.reliability - a.reliability);
+          return sorted.sort((a, b) => (b.articles?.length || 0) - (a.articles?.length || 0) || getGroundingMetrics(b).issueScore - getGroundingMetrics(a).issueScore);
         }
-        return sorted.sort((a, b) => b.reliability - a.reliability || new Date(b.updated_at) - new Date(a.updated_at));
+        return sorted.sort((a, b) => getGroundingMetrics(b).issueScore - getGroundingMetrics(a).issueScore || new Date(b.updated_at) - new Date(a.updated_at));
       }
 
       function scrollIssueListToTop() {
@@ -2601,6 +3021,7 @@
         const data = await response.json();
         issuesData = data.issues || [];
         runtimeData = data.runtime_status || runtimeData;
+        marketPulseData = data.market_pulse || marketPulseData;
         renderPulse(data.market_pulse || {});
         renderList();
         const visible = getVisibleIssues();
@@ -2618,6 +3039,7 @@
       }
 
       function renderPulse(marketPulse) {
+        marketPulseData = marketPulse || marketPulseData;
         renderSummaryDashboard(marketPulse);
         updateSummaryMetrics();
         renderFeaturedIssue();
@@ -2658,9 +3080,9 @@
       function buildSearchRankings() {
         const now = Date.now();
         const windows = [
-          { hours: 3, label: "최근 3시간" },
-          { hours: 24, label: "최근 24시간" },
-          { hours: 72, label: "최근 72시간" },
+          { hours: 6, label: "최근 6시간 vs 직전 6시간" },
+          { hours: 12, label: "최근 12시간 vs 직전 12시간" },
+          { hours: 24, label: "최근 24시간 vs 직전 24시간" },
         ];
 
         function computeForWindow(hours) {
@@ -2681,23 +3103,31 @@
               .slice(0, 6);
             if (!labels.length) return;
 
-            const currentArticles = (issue.articles || []).filter((article) => {
+            let currentArticles = 0;
+            let previousArticles = 0;
+            let freshnessScore = 0;
+            (issue.articles || []).forEach((article) => {
               const ts = new Date(article.collected_at || article.published_at).getTime();
-              return Number.isFinite(ts) && ts >= currentThreshold;
-            }).length;
-            const previousArticles = (issue.articles || []).filter((article) => {
-              const ts = new Date(article.collected_at || article.published_at).getTime();
-              return Number.isFinite(ts) && ts >= previousThreshold && ts < currentThreshold;
-            }).length;
+              if (!Number.isFinite(ts)) return;
+              if (ts >= currentThreshold) {
+                currentArticles += 1;
+                const ageHours = (now - ts) / (60 * 60 * 1000);
+                freshnessScore += Math.max(0.5, 1.8 - (ageHours / Math.max(hours, 1)));
+              } else if (ts >= previousThreshold) {
+                previousArticles += 1;
+              }
+            });
 
-            const reliabilityBonus = Math.round((Number(issue.reliability || 0) || 0) * 4);
+            const grounding = getGroundingMetrics(issue);
+            const reliabilityBonus = Math.round((Number(issue.reliability || 0) || 0) * 2);
+            const trustBonus = grounding.issueScore * 4;
             const priorityBonus = issue.priority === "priority" ? 2 : 0;
             const readyBonus = issue.status === "READY" ? 1 : 0;
-            const currentScore = currentArticles * 6 + reliabilityBonus + priorityBonus + readyBonus;
-            const previousScore = previousArticles * 6 + reliabilityBonus + priorityBonus;
+            const currentScore = currentArticles * 5 + freshnessScore + trustBonus + reliabilityBonus + priorityBonus + readyBonus;
+            const previousScore = previousArticles * 4 + (trustBonus * 0.55) + reliabilityBonus + priorityBonus;
 
             labels.forEach((label, index) => {
-              const labelWeight = Math.max(0.4, (6 - index) * 0.35);
+              const labelWeight = Math.max(0.45, (6 - index) * 0.42);
               addScore(currentMap, label, currentArticles > 0 ? currentScore + labelWeight : 0);
               addScore(previousMap, label, previousArticles > 0 ? previousScore + labelWeight : 0);
             });
@@ -2746,7 +3176,7 @@
         if (note) note.textContent = `${rankingResult.label} 기사 흐름 및 키워드 출현량 기준 계산 순위`;
 
         if (!rankings.length) {
-          container.innerHTML = '<div class="search-ranking-fallback">검색어 순위를 계산할 데이터가 아직 충분하지 않습니다.</div>';
+          container.innerHTML = '<div class="search-ranking-fallback">키워드 순위를 계산할 데이터가 아직 충분하지 않습니다.</div>';
           return;
         }
 
@@ -2933,10 +3363,11 @@
         const yTicks = buildYAxisTicks(max);
         const width = 320;
         const height = 160;
-        const padding = { top: 12, right: 14, bottom: 24, left: 28 };
+        const padding = { top: 18, right: 22, bottom: 30, left: 36 };
         const chartWidth = width - padding.left - padding.right;
         const chartHeight = height - padding.top - padding.bottom;
-        const barWidth = chartWidth / sorted.length - 8;
+        const gap = 10;
+        const barWidth = chartWidth / sorted.length - gap;
 
         yTicks.forEach((tick) => {
           const ratio = max === 0 ? 0 : tick / max;
@@ -2960,7 +3391,7 @@
         });
 
         sorted.forEach(([hour, count], index) => {
-          const x = padding.left + index * (barWidth + 8);
+          const x = padding.left + index * (barWidth + gap);
           const barHeight = Math.max(8, (count / max) * chartHeight);
           const y = height - padding.bottom - barHeight;
           const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
@@ -2985,24 +3416,22 @@
       }
 
       function renderFunnelChart() {
-        const metrics = runtimeData?.funnel_metrics || {};
-        const collected = Number(metrics.current_collected || 0);
-        const clustered = Number(metrics.current_clustered || 0);
-        const ready = Number(metrics.current_ready || 0);
-        const hold = Math.max(clustered - ready, 0);
-        const max = Math.max(collected, clustered, ready, hold, 1);
+        const totalIssues = issuesData.length;
+        const readyCount = issuesData.filter((issue) => issue.status === "READY").length;
+        const holdCount = issuesData.filter((issue) => issue.status === "HOLD").length;
+        const groundedCount = issuesData.filter((issue) => issue.grounded).length;
+        const externalCount = issuesData.filter((issue) => getGroundingMetrics(issue).externalSupportClaims > 0).length;
+        const contradictionCount = issuesData.filter((issue) => getGroundingMetrics(issue).contradictionRatio > 0).length;
+        const max = Math.max(groundedCount, holdCount, externalCount, contradictionCount, 1);
         const funnel = document.getElementById("summary-funnel");
-        document.getElementById("funnel-meta").innerHTML = collected
-          ? `최근 24시간 평균 수집 ${metrics.avg_collected_24h || 0}건<br>평균 이슈화 ${metrics.avg_clustered_24h || 0}건<br>평균 READY율 ${metrics.avg_ready_rate_24h || 0}%`
-          : "최근 24시간 평균 수집 0건<br>평균 이슈화 0건<br>평균 READY율 0%";
-        const clusterRate = collected ? Math.round((clustered / collected) * 100) : 0;
-        const readyRate = clustered ? Math.round((ready / clustered) * 100) : 0;
-        const holdRate = clustered ? Math.round((hold / clustered) * 100) : 0;
+        document.getElementById("funnel-meta").innerHTML = totalIssues
+          ? `전체 이슈 ${totalIssues}건<br>READY ${readyCount}건 · HOLD ${holdCount}건<br>grounded ${groundedCount}건`
+          : "현재 분석된 이슈가 없습니다.<br>READY 0건 · HOLD 0건<br>grounded 0건";
         funnel.innerHTML = [
-          ["수집", collected, "기준", "collect-step"],
-          ["클러스터링", clustered, `${clusterRate}% 전환`, "cluster-step"],
-          ["READY", ready, `${readyRate}% 채택`, "ready-step"],
-          ["HOLD", hold, `${holdRate}% 보류`, "hold-step"],
+          ["검증 완료", groundedCount, `${totalIssues ? Math.round((groundedCount / totalIssues) * 100) : 0}%`, "ready-step"],
+          ["검토 필요", holdCount, `${totalIssues ? Math.round((holdCount / totalIssues) * 100) : 0}%`, "hold-step"],
+          ["외부 근거", externalCount, `${totalIssues ? Math.round((externalCount / totalIssues) * 100) : 0}%`, "cluster-step"],
+          ["상충 감지", contradictionCount, `${totalIssues ? Math.round((contradictionCount / totalIssues) * 100) : 0}%`, "collect-step"],
         ].map(([label, value, pct, className]) => `
           <div class="summary-funnel-card ${className}" style="--step-width:${Math.max(20, Math.round((value / max) * 100))}%;">
             <strong>${label}</strong>

@@ -55,7 +55,9 @@ class NewsPipeline:
                 evidence=evidence,
                 reliability=reliability,
                 hold_reason=hold_reason,
+                corpus_articles=articles,
             )
+            effective_hold_reason = analysis.hold_reason or hold_reason
             issue_id = sha1(topic.encode("utf-8")).hexdigest()[:10]
             issues.append(
                 Issue(
@@ -66,7 +68,7 @@ class NewsPipeline:
                     evidence=evidence,
                     reliability=reliability,
                     analysis=analysis,
-                    status=_status_from_hold_reason(hold_reason),
+                    status=_status_from_hold_reason(effective_hold_reason),
                     updated_at=datetime.utcnow(),
                 )
             )

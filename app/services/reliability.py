@@ -65,6 +65,47 @@ def score_issue(articles: list[Article], evidence: list[EvidenceSnippet]) -> Rel
     )
 
 
+def score_grounding(claim_results: list[dict], base_reliability: ReliabilityScore) -> dict:
+    if not claim_results:
+        return {
+            "grounded_ratio": 0.0,
+            "avg_claim_score": 0.0,
+            "contradiction_ratio": 0.0,
+            "issue_score": round(base_reliability.value * 0.4, 3),
+            "reasons": ["검증 가능한 claim이 없습니다."],
+        }
+
+    grounded_results = [item for item in claim_results if item.get("ready")]
+    contradiction_results = [item for item in claim_results if item.get("contradiction_count", 0) > 0]
+    grounded_ratio = len(grounded_results) / len(claim_results)
+    contradiction_ratio = len(contradiction_results) / len(claim_results)
+    avg_claim_score = sum(float(item.get("score", 0.0)) for item in claim_results) / len(claim_results)
+
+    issue_score = (
+        avg_claim_score * 0.52
+        + grounded_ratio * 0.28
+        + base_reliability.value * 0.20
+        - min(contradiction_ratio * 0.35, 0.35)
+    )
+    issue_score = round(max(0.0, min(issue_score, 1.0)), 3)
+
+    reasons: list[str] = []
+    if grounded_ratio < 0.5:
+        reasons.append("검증 통과 claim 비율이 낮습니다.")
+    if contradiction_ratio > 0:
+        reasons.append("상충 근거가 감지된 claim이 있습니다.")
+    if base_reliability.value < 0.7:
+        reasons.append("출처/최신성 기반 기본 신뢰도가 높지 않습니다.")
+
+    return {
+        "grounded_ratio": round(grounded_ratio, 3),
+        "avg_claim_score": round(avg_claim_score, 3),
+        "contradiction_ratio": round(contradiction_ratio, 3),
+        "issue_score": issue_score,
+        "reasons": reasons,
+    }
+
+
 def _to_utc(value: datetime) -> datetime:
     if value.tzinfo is None:
         return value.replace(tzinfo=timezone.utc)

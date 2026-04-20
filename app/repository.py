@@ -218,6 +218,12 @@ class IssueRepository:
 
     def save_issues(self, issues: list[Issue]) -> None:
         with self._connect() as conn:
+            current_ids = {issue.id for issue in issues}
+            if current_ids:
+                placeholders = ",".join("?" for _ in current_ids)
+                conn.execute(f"DELETE FROM issues WHERE id NOT IN ({placeholders})", tuple(current_ids))
+            else:
+                conn.execute("DELETE FROM issues")
             for issue in issues:
                 payload = json.dumps(self._serialize_issue(issue), ensure_ascii=False)
                 conn.execute(
@@ -289,6 +295,7 @@ class IssueRepository:
                 "grounded": issue.analysis.grounded,
                 "priority": issue.analysis.priority.value,
                 "hold_reason": issue.analysis.hold_reason,
+                "grounding_details": issue.analysis.grounding_details,
             },
         }
 
@@ -330,6 +337,7 @@ class IssueRepository:
                 grounded=False,
                 priority=IssuePriority.GENERAL,
                 hold_reason="legacy_issue_payload",
+                grounding_details={},
             )
         else:
             analysis = AnalysisResult(
@@ -346,6 +354,7 @@ class IssueRepository:
                 grounded=analysis_data["grounded"],
                 priority=IssuePriority(analysis_data.get("priority", "general")),
                 hold_reason=analysis_data.get("hold_reason"),
+                grounding_details=analysis_data.get("grounding_details", {}),
             )
         return Issue(
             id=data["id"],

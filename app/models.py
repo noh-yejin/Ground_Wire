@@ -82,6 +82,7 @@ class AnalysisResult:
     grounded: bool
     priority: IssuePriority
     hold_reason: str | None = None
+    grounding_details: dict[str, object] = field(default_factory=dict)
 
 
 @dataclass(slots=True)

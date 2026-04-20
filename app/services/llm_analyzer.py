@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from pydantic import BaseModel, Field
 
 from app.config import settings
@@ -15,7 +16,9 @@ from app.models import (
     SentimentLabel,
 )
 from app.services.clustering import _extract_keywords
-from app.services.source_normalizer import normalize_source_name
+from app.services.rag import EvidenceRetriever
+from app.services.reliability import score_grounding
+from app.services.source_normalizer import is_trusted_ready_source, normalize_source_name
 
 try:
     from openai import OpenAI
@@ -26,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 NEGATIVE_HINTS = ("위험", "후퇴", "둔화", "긴축", "변동성", "제재")
 POSITIVE_HINTS = ("증가", "개선", "회복", "확대", "기대", "성장")
+CONTRADICTION_HINTS = ("아니다", "부인", "반박", "정정", "철회", "논란", "상충", "사실무근", "불확실")
 
 
 class IssueAnalysisSchema(BaseModel):
@@ -44,6 +48,13 @@ class IssueAnalysisSchema(BaseModel):
     hold_reason: str | None = Field(default=None, description="Why the issue should be held if not ready")
 
 
+class ClaimVerificationSchema(BaseModel):
+    verification_label: str = Field(description="support, partial_support, contradict, or insufficient")
+    confidence: float = Field(description="0 to 1 confidence")
+    matched_entities: list[str] = Field(description="Entities or terms directly matched between claim and evidence")
+    rationale: str = Field(description="Short Korean explanation grounded in the evidence")
+
+
 class LLMAnalyzer:
     """Backend-only analysis interface.
 
@@ -54,6 +65,7 @@ class LLMAnalyzer:
     def __init__(self) -> None:
         self.last_remote_error: str | None = None
         self.last_remote_success: bool = False
+        self.retriever = EvidenceRetriever()
         self.client = OpenAI(api_key=settings.openai_api_key, timeout=settings.llm_timeout_seconds) if (
             settings.openai_api_key and OpenAI is not None
         ) else None
@@ -65,23 +77,41 @@ class LLMAnalyzer:
         evidence: list[EvidenceSnippet],
         reliability: ReliabilityScore,
         hold_reason: str | None,
+        corpus_articles: list[Article] | None = None,
     ) -> AnalysisResult:
         joined_titles = " ".join(article.title for article in articles)
         joined_content = " ".join(article.content for article in articles)
         keywords = _extract_keywords(f"{joined_titles} {joined_content}")[:6]
         key_signals = derive_key_signals(topic, articles, keywords)
-        key_points = derive_key_points(evidence, articles)
         trend_summary = derive_trend_summary(articles)
         sentiment = detect_sentiment(joined_titles + " " + joined_content)
-        risk_points = derive_risk_points(articles, reliability, hold_reason)
         priority = derive_priority(topic, articles, reliability, key_signals)
         market_impact = derive_market_impact(topic, articles, sentiment)
         policy_risk = derive_policy_risk(topic, articles, key_signals)
         volatility_risk = derive_volatility_risk(topic, articles, sentiment)
+        claim_results = self._build_grounded_claims(topic, articles, evidence, keywords, corpus_articles or articles)
+        grounding = score_grounding(claim_results, reliability)
+        grounded_summary = self._build_grounded_summary(topic, claim_results, evidence, reliability)
+        key_points = grounded_summary["key_points"] or derive_key_points(evidence, articles)
+        summary = grounded_summary["summary"]
+        effective_hold_reason = hold_reason
+        if effective_hold_reason is None and (
+            grounding["grounded_ratio"] < 0.5
+            or grounding["issue_score"] < max(settings.hold_threshold, 0.7)
+            or not grounded_summary["grounded_claim_ids"]
+        ):
+            effective_hold_reason = (
+                f"grounding 검증 부족: grounded_ratio={grounding['grounded_ratio']}, issue_score={grounding['issue_score']}"
+            )
+        risk_points = derive_risk_points(articles, reliability, effective_hold_reason)
+        for reason in grounding["reasons"]:
+            if reason not in risk_points:
+                risk_points.append(reason)
+        grounded_flag = effective_hold_reason is None and bool(grounded_summary["grounded_claim_ids"])
 
-        if hold_reason:
+        if effective_hold_reason:
             return AnalysisResult(
-                summary=f"보류된 이슈입니다. 사유: {hold_reason}",
+                summary=f"보류된 이슈입니다. 사유: {effective_hold_reason}. {summary}",
                 keywords=keywords,
                 key_signals=key_signals,
                 key_points=key_points,
@@ -91,19 +121,19 @@ class LLMAnalyzer:
                 policy_risk=policy_risk,
                 volatility_risk=volatility_risk,
                 risk_points=risk_points,
-                grounded=False,
+                grounded=grounded_flag,
                 priority=priority,
-                hold_reason=hold_reason,
+                hold_reason=effective_hold_reason,
+                grounding_details={
+                    "claims": claim_results,
+                    "grounding": grounding,
+                    "grounded_summary": grounded_summary,
+                },
             )
-
-        if self.client is not None:
-            remote = self._analyze_with_openai(topic, articles, evidence, reliability)
-            if remote is not None:
-                return remote
 
         self.last_remote_success = False
         return AnalysisResult(
-            summary=build_local_summary(topic, articles, evidence, reliability),
+            summary=summary,
             keywords=keywords,
             key_signals=key_signals,
             key_points=key_points,
@@ -113,9 +143,14 @@ class LLMAnalyzer:
             policy_risk=policy_risk,
             volatility_risk=volatility_risk,
             risk_points=risk_points,
-            grounded=True,
+            grounded=grounded_flag,
             priority=priority,
             hold_reason=None,
+            grounding_details={
+                "claims": claim_results,
+                "grounding": grounding,
+                "grounded_summary": grounded_summary,
+            },
         )
 
     def debug_status(self) -> dict:
@@ -184,7 +219,266 @@ class LLMAnalyzer:
             grounded=parsed.grounded,
             priority=parsed.priority,
             hold_reason=parsed.hold_reason,
+            grounding_details={},
         )
+
+    def _build_grounded_claims(
+        self,
+        topic: str,
+        articles: list[Article],
+        evidence: list[EvidenceSnippet],
+        keywords: list[str],
+        corpus_articles: list[Article],
+    ) -> list[dict]:
+        candidates = self._extract_candidate_claims(topic, articles, evidence, keywords)
+        return [self._verify_claim(candidate, articles, corpus_articles) for candidate in candidates]
+
+    def _extract_candidate_claims(
+        self,
+        topic: str,
+        articles: list[Article],
+        evidence: list[EvidenceSnippet],
+        keywords: list[str],
+    ) -> list[str]:
+        candidates: list[str] = []
+        seed_texts = [item.quote for item in evidence[:4]]
+        seed_texts.extend(article.content.split(".")[0].strip() for article in articles[:4] if article.content)
+        seed_texts.append(topic)
+        seed_texts.extend(keywords[:3])
+        for raw in seed_texts:
+            cleaned = _clean_claim(raw)
+            if cleaned and cleaned not in candidates:
+                candidates.append(cleaned)
+        return candidates[:6]
+
+    def _verify_claim(self, claim: str, articles: list[Article], corpus_articles: list[Article]) -> dict:
+        support_evidence = self.retriever.retrieve_for_claim(claim, articles, corpus_articles=corpus_articles)
+        external_evidence = self.retriever.retrieve_external_for_claim(claim, articles, corpus_articles=corpus_articles)
+        counter_evidence = self.retriever.retrieve_counter_evidence(claim, articles, corpus_articles=corpus_articles)
+        evidence_rows: list[dict] = []
+        support_count = 0
+        contradiction_count = 0
+        trusted_support_count = 0
+        verification_scores: list[float] = []
+        local_support_count = 0
+        external_support_count = 0
+
+        cluster_ids = {article.id for article in articles}
+        support_pool = self._merge_evidence_lists(support_evidence, external_evidence)
+
+        for item in support_pool:
+            verification = self._classify_claim_with_grounding(claim, item)
+            label = verification["label"]
+            trusted = is_trusted_ready_source(item.source)
+            if label != "insufficient":
+                verification_scores.append(float(verification["score"]))
+            if label in {"support", "partial_support"}:
+                support_count += 1
+                if item.article_id in cluster_ids:
+                    local_support_count += 1
+                else:
+                    external_support_count += 1
+                if trusted:
+                    trusted_support_count += 1
+            evidence_rows.append(
+                {
+                    "article_id": item.article_id,
+                    "source": item.source,
+                    "url": item.url,
+                    "quote": item.quote[:220],
+                    "retrieval_score": round(item.score, 3),
+                    "verification_label": label,
+                    "verification_score": round(float(verification["score"]), 3),
+                    "trusted_source": trusted,
+                    "entity_match_score": verification["entity_match_score"],
+                    "number_match_score": verification["number_match_score"],
+                    "matched_entities": verification["matched_entities"],
+                    "scope": "local" if item.article_id in cluster_ids else "external",
+                    "rationale": verification["rationale"],
+                }
+            )
+
+        for item in counter_evidence:
+            verification = self._classify_claim_with_grounding(claim, item, contradiction_mode=True)
+            contradicted = verification["label"] == "contradict"
+            if not contradicted:
+                continue
+            contradiction_count += 1
+            evidence_rows.append(
+                {
+                    "article_id": item.article_id,
+                    "source": item.source,
+                    "url": item.url,
+                    "quote": item.quote[:220],
+                    "retrieval_score": round(item.score, 3),
+                    "verification_label": "contradict",
+                    "verification_score": round(float(verification["score"]), 3),
+                    "trusted_source": is_trusted_ready_source(item.source),
+                    "entity_match_score": verification["entity_match_score"],
+                    "number_match_score": verification["number_match_score"],
+                    "matched_entities": verification["matched_entities"],
+                    "scope": "counter",
+                    "rationale": verification["rationale"],
+                }
+            )
+
+        avg_verification = sum(verification_scores) / max(len(verification_scores), 1)
+        external_diversity_bonus = min(external_support_count / 2, 1.0)
+        score = (
+            min(support_count / 3, 1.0) * 0.36
+            + min(trusted_support_count / 2, 1.0) * 0.30
+            + avg_verification * 0.18
+            + external_diversity_bonus * 0.10
+            + min(len(claim.split()) / 12, 1.0) * 0.06
+            - min(contradiction_count * 0.22, 0.44)
+        )
+        score = round(max(0.0, min(score, 1.0)), 3)
+        return {
+            "claim": claim,
+            "support_count": support_count,
+            "trusted_support_count": trusted_support_count,
+            "contradiction_count": contradiction_count,
+            "local_support_count": local_support_count,
+            "external_support_count": external_support_count,
+            "score": score,
+            "ready": (
+                support_count >= 2
+                and trusted_support_count >= 1
+                and contradiction_count == 0
+                and score >= 0.72
+                and (external_support_count >= 1 or local_support_count >= 2)
+            ),
+            "evidence": evidence_rows[:6],
+        }
+
+    def _build_grounded_summary(
+        self,
+        topic: str,
+        claim_results: list[dict],
+        evidence: list[EvidenceSnippet],
+        reliability: ReliabilityScore,
+    ) -> dict:
+        grounded_claims = [item for item in claim_results if item.get("ready")]
+        grounded_claims.sort(key=lambda item: item.get("score", 0.0), reverse=True)
+        grounded_claim_ids = [item["claim"] for item in grounded_claims[:3]]
+        if grounded_claims:
+            summary = " ".join(item["claim"] for item in grounded_claims[:2])
+            key_points = [item["claim"] for item in grounded_claims[:4]]
+            omitted_claims = [item["claim"] for item in claim_results if not item.get("ready")][:4]
+            return {
+                "summary": summary[:320],
+                "key_points": key_points,
+                "grounded_claim_ids": grounded_claim_ids,
+                "omitted_claims": omitted_claims,
+            }
+
+        fallback = build_local_summary(topic, [], evidence, reliability) if evidence else build_local_summary(topic, [], [], reliability)
+        return {
+            "summary": fallback,
+            "key_points": derive_key_points(evidence, [])[:4],
+            "grounded_claim_ids": [],
+            "omitted_claims": [item["claim"] for item in claim_results[:4]],
+        }
+
+    def _classify_claim_with_grounding(
+        self,
+        claim: str,
+        evidence: EvidenceSnippet,
+        contradiction_mode: bool = False,
+    ) -> dict:
+        overlap = _token_overlap_score(claim, evidence.quote)
+        entity_match = _entity_match_score(claim, evidence.quote)
+        number_match = _number_match_score(claim, evidence.quote)
+        heuristic_score = round(overlap * 0.45 + entity_match * 0.35 + number_match * 0.20, 3)
+        heuristic_label = _heuristic_verification_label(
+            heuristic_score=heuristic_score,
+            overlap=overlap,
+            contradiction_mode=contradiction_mode,
+            quote=evidence.quote,
+        )
+
+        if self.client is not None:
+            llm_result = self._verify_with_openai(claim, evidence.quote, contradiction_mode=contradiction_mode)
+            if llm_result is not None:
+                merged_score = round(
+                    max(0.0, min((heuristic_score * 0.45) + (llm_result["confidence"] * 0.55), 1.0)),
+                    3,
+                )
+                final_label = llm_result["verification_label"]
+                if contradiction_mode and final_label != "contradict":
+                    final_label = heuristic_label
+                return {
+                    "label": final_label,
+                    "score": merged_score,
+                    "entity_match_score": entity_match,
+                    "number_match_score": number_match,
+                    "matched_entities": llm_result["matched_entities"] or _matched_entities(claim, evidence.quote),
+                    "rationale": llm_result["rationale"],
+                }
+
+        return {
+            "label": heuristic_label,
+            "score": heuristic_score,
+            "entity_match_score": entity_match,
+            "number_match_score": number_match,
+            "matched_entities": _matched_entities(claim, evidence.quote),
+            "rationale": "휴리스틱 grounding 판정",
+        }
+
+    def _verify_with_openai(self, claim: str, quote: str, contradiction_mode: bool = False) -> dict | None:
+        self.last_remote_error = None
+        try:
+            response = self.client.responses.parse(
+                model=settings.openai_model,
+                input=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a claim verification model. "
+                            "Only judge whether the evidence supports, partially supports, contradicts, or is insufficient for the claim. "
+                            "Return concise Korean rationale."
+                        ),
+                    },
+                    {
+                        "role": "user",
+                        "content": (
+                            f"Claim: {claim}\n"
+                            f"Evidence: {quote}\n"
+                            f"Mode: {'contradiction_check' if contradiction_mode else 'support_check'}\n"
+                            "Output one verification label and confidence."
+                        ),
+                    },
+                ],
+                text_format=ClaimVerificationSchema,
+            )
+        except Exception as exc:
+            self.last_remote_success = False
+            self.last_remote_error = f"{type(exc).__name__}: {exc}"
+            logger.warning("OpenAI claim verification failed: %s", self.last_remote_error)
+            return None
+
+        parsed = getattr(response, "output_parsed", None)
+        if parsed is None:
+            return None
+        self.last_remote_success = True
+        label = str(parsed.verification_label).strip().lower()
+        if label not in {"support", "partial_support", "contradict", "insufficient"}:
+            label = "insufficient"
+        return {
+            "verification_label": label,
+            "confidence": float(parsed.confidence),
+            "matched_entities": parsed.matched_entities,
+            "rationale": parsed.rationale,
+        }
+
+    def _merge_evidence_lists(self, *lists: list[EvidenceSnippet]) -> list[EvidenceSnippet]:
+        merged: dict[tuple[str, str], EvidenceSnippet] = {}
+        for items in lists:
+            for item in items:
+                key = (item.article_id, item.quote)
+                if key not in merged or item.score > merged[key].score:
+                    merged[key] = item
+        return sorted(merged.values(), key=lambda item: item.score, reverse=True)
 
 
 def detect_sentiment(text: str) -> SentimentLabel:
@@ -357,3 +651,69 @@ def _build_issue_prompt(
         "10. 리스크 포인트 1~5개\n"
         "11. 근거 부족이면 grounded=false 또는 hold_reason 명시\n"
     )
+
+
+def _clean_claim(text: str | None) -> str:
+    if not text:
+        return ""
+    cleaned = re.sub(r"\s+", " ", text).strip()
+    cleaned = re.sub(r"^[\-\u2022]+\s*", "", cleaned)
+    return cleaned[:180]
+
+
+def _token_overlap_score(left: str, right: str) -> float:
+    left_tokens = {token.lower() for token in re.findall(r"[0-9A-Za-z가-힣]{2,}", left)}
+    right_tokens = {token.lower() for token in re.findall(r"[0-9A-Za-z가-힣]{2,}", right)}
+    if not left_tokens or not right_tokens:
+        return 0.0
+    overlap = len(left_tokens & right_tokens)
+    return round(overlap / max(len(left_tokens), 1), 3)
+
+
+def _extract_entities(text: str) -> set[str]:
+    tokens = re.findall(r"[A-Z][A-Za-z&.-]{1,}|[가-힣]{2,}|\d+(?:\.\d+)?%?", text)
+    return {token.lower() for token in tokens if len(token) >= 2}
+
+
+def _matched_entities(left: str, right: str) -> list[str]:
+    matched = sorted(_extract_entities(left) & _extract_entities(right))
+    return matched[:8]
+
+
+def _entity_match_score(left: str, right: str) -> float:
+    left_entities = _extract_entities(left)
+    right_entities = _extract_entities(right)
+    if not left_entities:
+        return 0.0
+    return round(len(left_entities & right_entities) / len(left_entities), 3)
+
+
+def _extract_numbers(text: str) -> set[str]:
+    return {token for token in re.findall(r"\d+(?:\.\d+)?%?", text)}
+
+
+def _number_match_score(left: str, right: str) -> float:
+    left_numbers = _extract_numbers(left)
+    if not left_numbers:
+        return 1.0
+    right_numbers = _extract_numbers(right)
+    return round(len(left_numbers & right_numbers) / len(left_numbers), 3)
+
+
+def _heuristic_verification_label(
+    *,
+    heuristic_score: float,
+    overlap: float,
+    contradiction_mode: bool,
+    quote: str,
+) -> str:
+    lowered = quote.lower()
+    if contradiction_mode:
+        if overlap >= 0.18 and any(token in lowered for token in CONTRADICTION_HINTS):
+            return "contradict"
+        return "insufficient"
+    if heuristic_score >= 0.72:
+        return "support"
+    if heuristic_score >= 0.42 or overlap >= 0.2:
+        return "partial_support"
+    return "insufficient"
