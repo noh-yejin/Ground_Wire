@@ -70,6 +70,34 @@ def dashboard(request: Request) -> HTMLResponse:
     )
 
 
+@app.get("/search-ranking-preview", response_class=HTMLResponse)
+def search_ranking_preview(request: Request) -> HTMLResponse:
+    issues = repository.list_issues()
+    ready_issues = [issue for issue in issues if issue.status.value == "READY"]
+    hold_issues = [issue for issue in issues if issue.status.value == "HOLD"]
+    priority_issues = [issue for issue in ready_issues if issue.analysis.priority.value == "priority"]
+    general_issues = [issue for issue in ready_issues if issue.analysis.priority.value == "general"]
+    keyword_hub = _build_keyword_hub(issues)
+    market_pulse = _build_market_pulse(issues, minutes=15)
+    return templates.TemplateResponse(
+        request,
+        "dashboard_search_rank.html",
+        {
+            "issues": issues,
+            "priority_issues": priority_issues,
+            "general_issues": general_issues,
+            "hold_issues": hold_issues,
+            "keyword_hub": keyword_hub,
+            "market_pulse": market_pulse,
+            "issues_json": json.dumps(_serialize_dashboard_issues(issues), ensure_ascii=False),
+            "app_name": f"{settings.app_name} · 실시간 검색어 순위",
+            "hold_threshold": settings.hold_threshold,
+            "scheduler_enabled": settings.enable_scheduler,
+            "runtime_status": _build_runtime_status(),
+        },
+    )
+
+
 @app.get("/api/issues")
 def list_issues() -> list[dict]:
     issues = repository.list_issues()
