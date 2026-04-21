@@ -4,8 +4,7 @@
 GroundWire는 실시간 뉴스 데이터를 기반으로, **검토 가능한 이슈만 선별해 구조화하는 분석 대시보드**입니다.
 
 
-**근거 기반 검증 + 신뢰도 평가 + LLM 분석**을 통해  
-이슈를 `READY` / `HOLD` 상태로 분류합니다.  
+**근거 기반 검증 + 신뢰도 평가 + LLM 분석**을 통해 이슈를 `READY` / `HOLD` 상태로 분류합니다.  
 
 
 ## 📊 Demo
@@ -36,8 +35,9 @@ GroundWire는 실시간 뉴스 데이터를 기반으로, **검토 가능한 이
 실시간 키워드 흐름과 뉴스 신호 변화 분석
 
 <p align="center">
-  <img src="./assets/keywords.png" width="55%">
+  <img src="./assets/keywords.png" width="40%">
 </p>  
+
 
 ## 🛠 기술 스택
 
@@ -79,7 +79,7 @@ RSS 수집 → 전처리 → 원문 URL 복원 → 기사 저장
 git clone <repository-url>
 cd "New project"
 ```
-### 2. 가상환경
+### 2. 가상환경 생성
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
@@ -88,15 +88,14 @@ source .venv/bin/activate
 ```bash
 pip install -r requirements.txt
 ```
-### 4. 환경 변수
+### 4. 환경 변수 설정
 기본 실행 설정은 `.env`에 작성합니다.
 ```python
 OPENAI_API_KEY=your_api_key_here
 OPENAI_MODEL=model_here
 EMBEDDING_MODEL=embedding_model_here
 ```
-### 5. threshold 변수
-`.env.local`
+### 5. threshold 변수 설정
 ```python
 PRESENTATION_MODE=true
 HOLD_THRESHOLD=0.55
@@ -107,7 +106,7 @@ MIN_GROUNDED_RATIO=0
 MIN_GROUNDING_ISSUE_SCORE=0.4
 MIN_GROUNDED_CLAIMS=0
 ```
-- .env.local은 선택 사항으로, 시연 또는 테스트 시 threshold와 판정 기준을 로컬 환경에서 임시로 조정할 때 사용합니다.
+- `.env.local` 파일은 선택 사항으로, 시연 또는 테스트 시 threshold와 판정 기준을 로컬 환경에서 임시로 조정할 때 사용합니다.
 
 ### 6. 실행
 ```bash
