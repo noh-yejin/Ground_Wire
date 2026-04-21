@@ -402,6 +402,17 @@
         text-align: center;
         margin-bottom: 3px;
       }
+      .panel-section-heading {
+        font-size: 1.1rem;
+        font-weight: 1300;
+        letter-spacing: 0.04em;
+        text-transform: none;
+        color: var(--accent);
+        margin-bottom: 3px;
+        display: block;
+        width: 100%;
+        text-align: center;
+      }
       .search-ranking-note {
         font-size: 0.72rem;
         color: var(--muted);
@@ -869,9 +880,11 @@
       }
       .signal-bars {
         display: grid;
+        grid-template-columns: minmax(0, 1fr);
         gap: 8px;
         align-content: start;
         min-height: 0;
+        width: 100%;
         padding-top: 0;
         overflow: auto;
         padding-right: 2px;
@@ -879,6 +892,9 @@
       .signal-bar-row {
         display: grid;
         gap: 7px;
+        width: 300px;
+        min-width: 0;
+        box-sizing: border-box;
         padding: 9px 10px 10px;
         border: 1px solid rgba(58, 90, 138, 0.12);
         border-radius: 13px;
@@ -893,7 +909,7 @@
       }
       .signal-bar-head {
         display: grid;
-        grid-template-columns: auto 1fr auto;
+        grid-template-columns: 22px minmax(0, 1fr) minmax(54px, auto);
         gap: 8px;
         align-items: center;
       }
@@ -943,18 +959,25 @@
         background: linear-gradient(90deg, #6487b5, #95b6d6);
       }
       .signal-bar-row label {
+        display: block;
         min-width: 0;
         font-size: 0.73rem;
         color: var(--ink);
         font-weight: 800;
-        white-space: normal;
         line-height: 1.22;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow-wrap: normal;
+        word-break: normal;
       }
       .signal-bar-meta {
         display: flex;
         align-items: baseline;
         gap: 6px;
         justify-content: flex-end;
+        min-width: 54px;
+        white-space: nowrap;
         text-align: right;
       }
       .signal-bar-value {
@@ -1677,6 +1700,10 @@
         margin-top: 6px;
       }
       .detail-item a { color: var(--ink); }
+      .article-link-unavailable {
+        color: var(--muted);
+        font-weight: 700;
+      }
       .chart { margin-top: 6px; }
       .trend-chart {
         width: 100%;
@@ -1793,7 +1820,7 @@
       .single-pane-card,
       .single-pane-card.distribution-card {
         height: 264px;
-        width: 80%;
+        width: 85%;
         justify-self: center;
       }
       .summary-pane .summary-chart-card,
@@ -1850,10 +1877,26 @@
         color: #fff;
       }
       .summary-tab-panels {
-        display: block;
+        display: grid;
+        min-width: 0;
+        position: relative;
       }
-      .summary-pane { display: none; }
-      .summary-pane.active { display: block; }
+      .summary-pane {
+        display: grid;
+        inset: 0;
+        min-width: 0;
+        opacity: 0;
+        pointer-events: none;
+        position: absolute;
+        visibility: hidden;
+        width: 100%;
+      }
+      .summary-pane.active {
+        opacity: 1;
+        pointer-events: auto;
+        position: relative;
+        visibility: visible;
+      }
       .single-pane-card,
       .single-pane-card.distribution-card {
         height: 264px;
@@ -2193,7 +2236,26 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1rem;
+        position: relative;
+        font-size: 0;
+      }
+      .focus-cta-icon::before {
+        content: "";
+        width: 16px;
+        height: 20px;
+        border: 2px solid currentColor;
+        border-radius: 4px;
+        background: rgba(198, 125, 18, 0.08);
+        box-shadow: inset 0 -6px 0 rgba(198, 125, 18, 0.08);
+      }
+      .focus-cta-icon::after {
+        content: "";
+        position: absolute;
+        width: 8px;
+        height: 2px;
+        border-radius: 999px;
+        background: currentColor;
+        transform: translateY(-2px);
       }
       .focus-cta-copy strong {
         display: block;
@@ -2271,7 +2333,7 @@
             <img class="brand-icon" src="/static/icons/groundwire-mark.svg" alt="신문 아이콘" />
             <h1>{{ app_name }}</h1>
           </div>
-          <p class="subtitle">실시간 수집 흐름과 신뢰도 기준을 함께 보는 뉴스 이슈 보드</p>
+          <p class="subtitle">실시간 뉴스 이슈 탐지 및 신뢰도 기반 대시보드</p>
           <div class="hero-meta intro-meta">
             <span class="hero-pill">실시간 감시 중</span>
             <span class="hero-pill">최근 {{ runtime_status.article_window_hours }}시간 창</span>
@@ -2317,7 +2379,7 @@
                 <div class="focus-market-list" id="focus-market-list"></div>
               </div>
               <button class="focus-cta" id="focus-open-button" type="button">
-                <div class="focus-cta-icon">🗎</div>
+                <div class="focus-cta-icon" aria-hidden="true"></div>
                 <div class="focus-cta-copy">
                   <strong>이슈 분석 더 보기</strong>
                   <span>심층 분석 확인</span>
@@ -2349,7 +2411,7 @@
                 <div class="search-ranking-head">
                   <div class="search-ranking-title">
                     <h3>실시간 키워드 순위</h3>
-                    <div class="search-ranking-note">최근 기사 흐름과 키워드 출현량 기준 순위</div>
+                    <div class="search-ranking-note">최근 12시간 vs 직전 12시간 기사 흐름 및 키워드 출현량 기준 계산 순위</div>
                   </div>
                   <div class="search-ranking-updated" id="search-ranking-updated">업데이트 대기</div>
                 </div>
@@ -2435,8 +2497,7 @@
             <aside class="shell-panel">
               <div class="panel-scroll">
                 <div class="section-title">
-                  <div class="eyebrow">Navigator</div>
-                  <h2>탐색 범위</h2>
+                  <div class="eyebrow panel-section-heading">이슈 필터</div>
                 </div>
                 <div class="nav-grid compact-nav-grid">
                   <button class="nav-button active" data-view="priority">
@@ -2459,7 +2520,7 @@
             <section class="list-panel">
               <div class="list-frame">
                 <div class="list-head">
-                  <div class="eyebrow">Live Board</div>
+                  <div class="eyebrow panel-section-heading">핵심 이슈 보드</div>
                   <h2 id="list-title">관련 이슈</h2>
                   <div class="toolbar">
                     <div class="segment">
@@ -2482,7 +2543,7 @@
             <aside class="detail-panel">
               <div class="panel-scroll">
                 <div class="detail-top">
-                  <div class="eyebrow">Detail Panel</div>
+                  <div class="eyebrow panel-section-heading">상세 분석</div>
                   <h2 id="detail-topic">이슈를 선택해 주세요</h2>
                   <div class="detail-sub" id="detail-meta">핵심 이슈를 펼치면 상세 분석이 여기에 표시됩니다.</div>
                   <div class="detail-summary" id="detail-summary">현재는 아직 선택된 이슈가 없습니다.</div>
@@ -2529,11 +2590,13 @@
     <script id="issues-data" type="application/json">{{ issues_json | safe }}</script>
     <script id="runtime-data" type="application/json">{{ runtime_status | tojson | safe }}</script>
     <script id="market-pulse-data" type="application/json">{{ market_pulse | tojson | safe }}</script>
+    <script id="search-rankings-data" type="application/json">{{ search_rankings | tojson | safe }}</script>
     
     <script>
       let issuesData = JSON.parse(document.getElementById("issues-data").textContent);
       let runtimeData = JSON.parse(document.getElementById("runtime-data").textContent);
       let marketPulseData = JSON.parse(document.getElementById("market-pulse-data").textContent);
+      let searchRankingsData = JSON.parse(document.getElementById("search-rankings-data").textContent);
       const state = {
         view: "priority",
         keyword: "",
@@ -2545,23 +2608,36 @@
       };
       let latestAnalyzeTimestamp = "{{ runtime_status.latest_analyze.created_at if runtime_status.latest_analyze else '' }}";
       let latestCollectTimestamp = "{{ runtime_status.latest_collect.created_at if runtime_status.latest_collect else '' }}";
+      let lastReadyFeaturedIssue = null;
 
       function issueMatchesView(issue) {
         if (state.view === "all") return true;
         if (state.view === "priority") {
-          const readyPriorityExists = issuesData.some((item) => item.status === "READY" && item.priority === "priority");
-          if (readyPriorityExists) return issue.status === "READY" && issue.priority === "priority";
-          return isEmergingPriority(issue);
+          const readyPriorityExists = issuesData.some((item) =>
+            item.status === "READY"
+            && item.priority === "priority"
+            && isQualifiedCoreIssue(item)
+          );
+          if (readyPriorityExists) {
+            return issue.status === "READY"
+              && issue.priority === "priority"
+              && isQualifiedCoreIssue(issue);
+          }
+          return issue.status === "READY" && isQualifiedCoreIssue(issue);
         }
         if (state.view === "general") return issue.status === "READY" && issue.priority === "general";
         return true;
       }
 
-      function isEmergingPriority(issue) {
-        if (issue.status !== "HOLD") return false;
-        const articleCount = issue.articles?.length || 0;
-        const hasSignals = (issue.key_signals || []).length > 0;
-        return issue.reliability >= 0.55 && articleCount >= 2 && hasSignals;
+      function getIssueDefaultView(issue) {
+        if (!issue || issue.status !== "READY") return "all";
+        const readyPriorityExists = issuesData.some((item) =>
+          item.status === "READY"
+          && item.priority === "priority"
+          && isQualifiedCoreIssue(item)
+        );
+        if (issue.priority === "priority" || !readyPriorityExists) return "priority";
+        return "general";
       }
 
       function issueMatchesKeyword(issue) {
@@ -2593,6 +2669,11 @@
           totalClaims: claims.length,
           reasons: grounding.reasons || [],
         };
+      }
+
+      function isQualifiedCoreIssue(issue) {
+        const grounding = getGroundingMetrics(issue);
+        return grounding.groundedRatio > 0 || grounding.readyClaims > 0;
       }
       function compactPoint(rawValue, maxLength = 34) {
         const compact = String(rawValue || "")
@@ -2655,14 +2736,9 @@
           </svg>
         `;
       }
-      function getIssueTrendValues(issue) {
-        const entries = Object.entries(issue?.hourly_counts || {}).sort((a, b) => a[0].localeCompare(b[0]));
-        return entries.slice(-8).map(([, value]) => Number(value || 0));
-      }
       function buildFocusMarketRows(issue) {
         const summaryParts = marketPulseData?.summary_parts || {};
         const rising = marketPulseData?.rising_keyword || null;
-        const trendValues = getIssueTrendValues(issue);
         const tone = issue.market_impact === "positive" ? "positive" : issue.policy_risk === "high" ? "warn" : "neutral";
         const topSignal = Array.isArray(marketPulseData?.top_signals) && marketPulseData.top_signals.length
           ? marketPulseData.top_signals[0]
@@ -2670,6 +2746,7 @@
         const topKeyword = Array.isArray(marketPulseData?.top_keywords) && marketPulseData.top_keywords.length
           ? marketPulseData.top_keywords[0]
           : null;
+        const sparklineSeries = marketPulseData?.sparkline_series || {};
         return [
           {
             label: "기사 반영",
@@ -2677,6 +2754,7 @@
             value: summaryParts.article_label || `${issue.articles?.length || 0}건`,
             change: `${issue.articles?.length || 0}건`,
             tone,
+            trendValues: sparklineSeries.article_counts || [],
           },
           {
             label: "핵심 신호",
@@ -2684,6 +2762,7 @@
             value: compactPoint(summaryParts.signal_label || issue.key_signals?.slice(0, 2).join(" · ") || "신호 대기", 18),
             change: topSignal ? `+${topSignal[1]}` : "0",
             tone: "neutral",
+            trendValues: sparklineSeries.top_signal?.values || [],
           },
           {
             label: "상승 키워드",
@@ -2691,6 +2770,7 @@
             value: compactPoint(rising?.label || topKeyword?.[0] || summaryParts.keyword_label || "키워드 대기", 18),
             change: rising?.delta ? `${rising.movement === "down" ? "▼" : "▲"}${rising.delta}` : (topKeyword ? `${topKeyword[1]}회` : "대기"),
             tone: rising?.movement === "down" ? "warn" : "positive",
+            trendValues: sparklineSeries.rising_keyword?.values || [],
           },
         ].map((row) => `
           <div class="focus-market-row">
@@ -2698,7 +2778,7 @@
               <strong>${row.label}</strong>
               <span>${row.sublabel}</span>
             </div>
-            ${buildFocusSparkline(trendValues, row.tone)}
+            ${buildFocusSparkline(row.trendValues, row.tone)}
             <div class="focus-market-value">
               <strong>${row.value}</strong>
               <span class="${row.tone}">${row.change}</span>
@@ -2707,15 +2787,26 @@
         `).join("");
       }
       function getFeaturedIssue() {
-        const priorityReady = sortIssues(
+        const readyIssues = sortIssues(
           issuesData
-            .filter((issue) => issue.status === "READY" && issue.priority === "priority")
+            .filter((issue) => issue.status === "READY")
+            .filter(isQualifiedCoreIssue)
             .filter(issueMatchesKeyword)
         );
-        if (priorityReady.length) return priorityReady[0];
-        const visible = getVisibleIssues();
-        if (visible.length) return visible[0];
-        return sortIssues([...issuesData])[0] || null;
+        const priorityReady = readyIssues.filter((issue) => issue.priority === "priority");
+        const featured = priorityReady[0] || readyIssues[0] || null;
+        if (featured) {
+          lastReadyFeaturedIssue = featured;
+          return featured;
+        }
+        if (lastReadyFeaturedIssue && issueMatchesKeyword(lastReadyFeaturedIssue)) {
+          return { ...lastReadyFeaturedIssue, stale_ready: true };
+        }
+        return null;
+      }
+
+      function getReviewCandidateIssue() {
+        return sortIssues(issuesData.filter(issueMatchesKeyword))[0] || null;
       }
 
       function setSummaryView(view) {
@@ -2725,6 +2816,13 @@
         });
         document.querySelectorAll('[data-summary-pane]').forEach((pane) => {
           pane.classList.toggle('active', pane.dataset.summaryPane === view);
+        });
+      }
+
+      function setActiveIssueView(view) {
+        state.view = view;
+        document.querySelectorAll("[data-view]").forEach((item) => {
+          item.classList.toggle("active", item.dataset.view === view);
         });
       }
 
@@ -2762,15 +2860,21 @@
         const marketUpdated = document.getElementById('focus-market-updated');
         const button = document.getElementById('focus-open-button');
         if (!issue) {
+          const reviewCandidate = getReviewCandidateIssue();
           topic.textContent = '핵심 이슈를 정리하고 있습니다';
-          summary.textContent = '지금은 표시할 이슈가 없습니다.';
+          summary.textContent = reviewCandidate
+            ? 'READY 기준을 통과한 핵심 이슈는 아직 없지만, 보류 후보를 열어 사람이 검토할 수 있습니다.'
+            : '지금은 표시할 이슈가 없습니다.';
           metaStrip.innerHTML = '';
           points.innerHTML = '';
           trustStrip.innerHTML = '';
           trustStrip.style.display = 'none';
-          marketList.innerHTML = '<div class="tiny">시장 요약을 준비 중입니다.</div>';
+          marketList.innerHTML = reviewCandidate
+            ? '<div class="tiny">보류 후보 검토가 가능합니다.</div>'
+            : '<div class="tiny">시장 요약을 준비 중입니다.</div>';
           marketUpdated.textContent = '업데이트 대기';
-          button.disabled = true;
+          button.disabled = !reviewCandidate;
+          if (reviewCandidate) button.dataset.issueId = reviewCandidate.id;
           return;
         }
         button.disabled = false;
@@ -2792,7 +2896,9 @@
           sub: buildFocusPointSubline(issue, article, index),
         }));
         topic.textContent = headline;
-        summary.textContent = shortSummary;
+        summary.textContent = issue.stale_ready
+          ? `새 검증 이슈를 기다리는 동안 직전 검증 이슈를 유지합니다. ${shortSummary}`
+          : shortSummary;
         metaStrip.innerHTML = `
           <span class="focus-meta-pill ${issue.market_impact === "positive" ? "positive" : issue.market_impact === "negative" ? "warn" : ""}" data-icon="📊"><div><strong>시장 영향</strong><span>${impactLabel}</span></div></span>
           <span class="focus-meta-pill ${issue.policy_risk === "high" ? "warn" : issue.policy_risk === "low" ? "positive" : ""}" data-icon="⚠"><div><strong>정책 리스크</strong><span>${formatLabel(issue.policy_risk)}</span></div></span>
@@ -2821,7 +2927,7 @@
         const titleMap = { priority: "관련 이슈", general: "일반 추적", all: "전체 이슈" };
         const copyMap = {
           priority: "핵심 이슈와 연결된 관련 이슈를 표시합니다.",
-          general: "일반 모니터링 이슈를 표시합니다.",
+          general: "검증 완료된 일반 모니터링 이슈를 표시합니다.",
           all: "모든 이슈를 통합해서 보여줍니다.",
         };
         const sortLabelMap = { reliability: "신뢰 점수순", latest: "최신순", volume: "기사수순" };
@@ -2832,9 +2938,14 @@
 
         if (!issues.length) {
           state.selectedIssueId = "";
-          container.innerHTML = '<div class="empty">현재 조건과 맞는 이슈가 없습니다. 다른 구역을 보거나 키워드 필터를 해제해보세요.</div>';
+          const emptyCopy = state.view === "priority"
+            ? "현재 신뢰 검증을 통과한 핵심 이슈가 없습니다. 보류 후보는 전체 보기에서 확인할 수 있습니다."
+            : state.view === "general"
+              ? "현재 신뢰 검증을 통과한 일반 이슈가 없습니다. 보류 후보는 전체 보기에서 확인할 수 있습니다."
+              : "현재 조건과 맞는 이슈가 없습니다. 다른 구역을 보거나 키워드 필터를 해제해보세요.";
+          container.innerHTML = `<div class="empty">${emptyCopy}</div>`;
           document.getElementById("detail-meta").textContent = "분석 열기를 누르면 아래에 상세 분석이 펼쳐집니다.";
-        clearDetailPanel();
+          clearDetailPanel();
           return;
         }
 
@@ -2889,7 +3000,14 @@
         if (keyword) renderTrend(keyword.toLowerCase(), keywordDisplay);
       }
 
+      function resetDetailScroll() {
+        const detailScroller = document.querySelector(".detail-panel .panel-scroll");
+        if (!detailScroller) return;
+        detailScroller.scrollTop = 0;
+      }
+
       function renderDetail(issue, contextLabel) {
+        resetDetailScroll();
         const grounding = getGroundingMetrics(issue);
         document.getElementById("detail-topic").textContent = issue.topic;
         document.getElementById("detail-meta").textContent = `${contextLabel} | ${issue.status} | ${issue.priority} | trust ${grounding.issueScore.toFixed(2)} | 검증 ${Math.round(grounding.groundedRatio * 100)}%`;
@@ -2984,15 +3102,42 @@
           meta.textContent = `${article.source} | 게시 ${article.published_at}`;
           const linkWrap = document.createElement("div");
           linkWrap.style.marginTop = "5px";
-          const link = document.createElement("a");
-          link.href = article.url;
-          link.target = "_blank";
-          link.rel = "noreferrer";
-          appendSentenceLines(link, article.title);
-          linkWrap.appendChild(link);
+          const articleUrl = getUsableArticleUrl(article);
+          if (articleUrl) {
+            const link = document.createElement("a");
+            link.href = articleUrl;
+            link.target = "_blank";
+            link.rel = "noreferrer noopener";
+            appendSentenceLines(link, article.title);
+            linkWrap.appendChild(link);
+          } else {
+            const unavailable = document.createElement("span");
+            unavailable.className = "article-link-unavailable";
+            appendSentenceLines(unavailable, `${article.title} · 원문 링크 재분석 필요`);
+            linkWrap.appendChild(unavailable);
+          }
           div.append(meta, linkWrap);
           articles.appendChild(div);
         });
+      }
+
+      function getUsableArticleUrl(article) {
+        const rawUrl = String(article?.url || "").trim();
+        return isUsableArticleUrl(rawUrl) ? rawUrl : "";
+      }
+
+      function isUsableArticleUrl(rawUrl) {
+        if (!rawUrl) return false;
+        try {
+          const url = new URL(rawUrl);
+          const hostname = url.hostname.replace(/^www\./, "");
+          if (hostname === "example.com") return false;
+          if (hostname.endsWith(".example.com")) return false;
+          if (hostname === "news.google.com") return false;
+          return url.protocol === "https:" || url.protocol === "http:";
+        } catch (_) {
+          return false;
+        }
       }
 
       function decodeHtmlText(value) {
@@ -3243,6 +3388,7 @@
         issuesData = data.issues || [];
         runtimeData = data.runtime_status || runtimeData;
         marketPulseData = data.market_pulse || marketPulseData;
+        searchRankingsData = data.search_rankings || searchRankingsData;
         renderPulse(data.market_pulse || {});
         renderList();
         const visible = getVisibleIssues();
@@ -3262,12 +3408,12 @@
       function renderPulse(marketPulse) {
         marketPulseData = marketPulse || marketPulseData;
         renderSummaryDashboard(marketPulse);
-        updateSummaryMetrics();
+        renderSearchRanking(searchRankingsData);
         renderFeaturedIssue();
       }
 
       function updateSummaryMetrics() {
-        renderSearchRanking(runtimeData);
+        renderSearchRanking(searchRankingsData);
       }
 
       function formatRemaining(value) {
@@ -3290,111 +3436,16 @@
         return map[value] || value;
       }
 
-      function formatRankingUpdated(runtimeStatus) {
-        const source = runtimeStatus?.latest_analyze?.created_at_display
-          || runtimeStatus?.latest_collect?.created_at_display
-          || "";
-        const match = String(source).match(/(\d{2}:\d{2})/);
-        return match ? `${match[1]} 업데이트` : (source || "업데이트 대기");
-      }
-
-      function buildSearchRankings() {
-        const now = Date.now();
-        const windows = [
-          { hours: 6, label: "최근 6시간 vs 직전 6시간" },
-          { hours: 12, label: "최근 12시간 vs 직전 12시간" },
-          { hours: 24, label: "최근 24시간 vs 직전 24시간" },
-        ];
-
-        function computeForWindow(hours) {
-          const currentThreshold = now - hours * 60 * 60 * 1000;
-          const previousThreshold = now - hours * 2 * 60 * 60 * 1000;
-          const currentMap = new Map();
-          const previousMap = new Map();
-
-          function addScore(bucket, label, score) {
-            if (!label || !score) return;
-            bucket.set(label, (bucket.get(label) || 0) + score);
-          }
-
-          issuesData.forEach((issue) => {
-            const labels = [...(issue.keywords || []), ...(issue.key_signals || [])]
-              .map((label) => String(label || "").trim())
-              .filter(Boolean)
-              .slice(0, 6);
-            if (!labels.length) return;
-
-            let currentArticles = 0;
-            let previousArticles = 0;
-            let freshnessScore = 0;
-            (issue.articles || []).forEach((article) => {
-              const ts = new Date(article.collected_at || article.published_at).getTime();
-              if (!Number.isFinite(ts)) return;
-              if (ts >= currentThreshold) {
-                currentArticles += 1;
-                const ageHours = (now - ts) / (60 * 60 * 1000);
-                freshnessScore += Math.max(0.5, 1.8 - (ageHours / Math.max(hours, 1)));
-              } else if (ts >= previousThreshold) {
-                previousArticles += 1;
-              }
-            });
-
-            const grounding = getGroundingMetrics(issue);
-            const reliabilityBonus = Math.round((Number(issue.reliability || 0) || 0) * 2);
-            const trustBonus = grounding.issueScore * 4;
-            const priorityBonus = issue.priority === "priority" ? 2 : 0;
-            const readyBonus = issue.status === "READY" ? 1 : 0;
-            const currentScore = currentArticles * 5 + freshnessScore + trustBonus + reliabilityBonus + priorityBonus + readyBonus;
-            const previousScore = previousArticles * 4 + (trustBonus * 0.55) + reliabilityBonus + priorityBonus;
-
-            labels.forEach((label, index) => {
-              const labelWeight = Math.max(0.45, (6 - index) * 0.42);
-              addScore(currentMap, label, currentArticles > 0 ? currentScore + labelWeight : 0);
-              addScore(previousMap, label, previousArticles > 0 ? previousScore + labelWeight : 0);
-            });
-          });
-
-          const currentRanked = Array.from(currentMap.entries())
-            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ko"))
-            .slice(0, 10);
-          const previousRankMap = new Map(
-            Array.from(previousMap.entries())
-              .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ko"))
-              .filter(([, score]) => score > 0)
-              .map(([label], index) => [label, index + 1]),
-          );
-
-          return {
-            label: windows.find((window) => window.hours === hours)?.label || `${hours}시간`,
-            rankings: currentRanked.map(([label, score], index) => {
-              const rank = index + 1;
-              const previousRank = previousRankMap.get(label);
-              if (!previousRank) return { rank, label, movement: "new", value: "N", score };
-              if (previousRank > rank) return { rank, label, movement: "up", value: previousRank - rank, score };
-              if (previousRank < rank) return { rank, label, movement: "down", value: rank - previousRank, score };
-              return { rank, label, movement: "same", value: "-", score };
-            }),
-          };
-        }
-
-        for (const window of windows) {
-          const result = computeForWindow(window.hours);
-          if (result.rankings.length) return result;
-        }
-
-        return { label: "최근 데이터 없음", rankings: [] };
-      }
-
-      function renderSearchRanking(runtimeStatus) {
+      function renderSearchRanking(rankingPayload) {
         const container = document.getElementById("search-ranking-list");
         const updated = document.getElementById("search-ranking-updated");
         const note = document.querySelector(".search-ranking-note");
         if (!container || !updated) return;
 
-        updated.textContent = formatRankingUpdated(runtimeStatus);
-        const rankingResult = buildSearchRankings();
-        const rankings = rankingResult.rankings;
-        if (note) note.textContent = `${rankingResult.label} 기사 흐름 및 키워드 출현량 기준 계산 순위`;
+        const rankingResult = rankingPayload || {};
+        const rankings = rankingResult.rankings || [];
+        updated.textContent = rankingResult.updated_text || "업데이트 대기";
+        if (note) note.textContent = rankingResult.note || "최근 기사 흐름 + 키워드 출현량 + 신뢰도 기준 계산 순위";
 
         if (!rankings.length) {
           container.innerHTML = '<div class="search-ranking-fallback">키워드 순위를 계산할 데이터가 아직 충분하지 않습니다.</div>';
@@ -3659,7 +3710,7 @@
         const funnel = document.getElementById("summary-funnel");
         document.getElementById("funnel-meta").innerHTML = totalIssues
           ? `전체 이슈 ${totalIssues}건<br>READY ${readyCount}건 · HOLD ${holdCount}건<br>grounded ${groundedCount}건`
-          : "현재 분석된 이슈가 없습니다.<br>READY 0건 · HOLD 0건<br>grounded 0건";
+          : "현재 분석된 이슈가 없습니다.<br>READY 0건 · HOLD 0건<br>Grounded 0건";
         funnel.innerHTML = [
           ["검증 완료", groundedCount, `${totalIssues ? Math.round((groundedCount / totalIssues) * 100) : 0}%`, "ready-step"],
           ["검토 필요", holdCount, `${totalIssues ? Math.round((holdCount / totalIssues) * 100) : 0}%`, "hold-step"],
@@ -3705,10 +3756,8 @@
 
       document.querySelectorAll("[data-view]").forEach((button) => {
         button.addEventListener("click", () => {
-          state.view = button.dataset.view;
+          setActiveIssueView(button.dataset.view);
           state.selectedIssueId = "";
-          document.querySelectorAll("[data-view]").forEach((item) => item.classList.remove("active"));
-          button.classList.add("active");
           renderList();
           scrollIssueListToTop();
           const visible = getVisibleIssues();
@@ -3722,8 +3771,25 @@
 
       document.getElementById('focus-open-button').addEventListener('click', () => {
         const featured = getFeaturedIssue();
-        if (!featured) return;
+        const reviewCandidate = featured || getReviewCandidateIssue();
+        if (!reviewCandidate) return;
         setExplorerOpen(true);
+        if (featured?.stale_ready) {
+          state.selectedIssueId = featured.id;
+          renderDetail(featured, "직전 검증 이슈");
+          const keyword = featured.key_signals?.[0] || featured.keywords?.[0] || featured.topic;
+          const keywordDisplay = featured.key_signals?.[0] || featured.keywords?.[0] || featured.topic;
+          if (keyword) renderTrend(keyword.toLowerCase(), keywordDisplay);
+          return;
+        }
+        if (!featured) {
+          setActiveIssueView("all");
+          renderList();
+          openIssue(reviewCandidate.id);
+          return;
+        }
+        setActiveIssueView(getIssueDefaultView(featured));
+        renderList();
         openIssue(featured.id);
       });
 

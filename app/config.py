@@ -4,6 +4,7 @@ from pathlib import Path
 
 
 def _load_dotenv() -> None:
+    existing_env = set(os.environ)
     for name in (".env", ".env.local"):
         path = Path(name)
         if not path.exists():
@@ -15,7 +16,8 @@ def _load_dotenv() -> None:
             key, value = line.split("=", 1)
             key = key.strip()
             value = value.strip().strip("'").strip('"')
-            os.environ.setdefault(key, value)
+            if key not in existing_env:
+                os.environ[key] = value
 
 
 _load_dotenv()
@@ -37,6 +39,7 @@ class Settings:
     min_unique_sources: int = 2
     slack_webhook_url: str | None = None
     enable_scheduler: bool = True
+    presentation_mode: bool = False
     collect_interval_minutes: int = 15
     analyze_interval_minutes: int = 60
     article_window_hours: int = 24
@@ -47,6 +50,10 @@ class Settings:
     max_parallel_issue_analysis: int = 3
     max_second_pass_reviews: int = 1
     enable_llm_claim_verification: bool = False
+    require_trusted_ready_source: bool = True
+    min_grounded_ratio: float = 0.6
+    min_grounding_issue_score: float = 0.75
+    min_grounded_claims: int = 2
     openai_api_key: str | None = None
     openai_model: str = "gpt-5.4-mini"
     embedding_model: str = "text-embedding-3-small"
@@ -138,6 +145,10 @@ class Settings:
 settings = Settings(
     slack_webhook_url=os.getenv("SLACK_WEBHOOK_URL"),
     enable_scheduler=os.getenv("ENABLE_SCHEDULER", "true").lower() == "true",
+    presentation_mode=os.getenv("PRESENTATION_MODE", "false").lower() == "true",
+    hold_threshold=float(os.getenv("HOLD_THRESHOLD", "0.65")),
+    min_articles_per_issue=int(os.getenv("MIN_ARTICLES_PER_ISSUE", "2")),
+    min_unique_sources=int(os.getenv("MIN_UNIQUE_SOURCES", "2")),
     collect_interval_minutes=int(os.getenv("COLLECT_INTERVAL_MINUTES", "15")),
     analyze_interval_minutes=int(os.getenv("ANALYZE_INTERVAL_MINUTES", "60")),
     article_window_hours=int(os.getenv("ARTICLE_WINDOW_HOURS", "24")),
@@ -148,6 +159,10 @@ settings = Settings(
     max_parallel_issue_analysis=int(os.getenv("MAX_PARALLEL_ISSUE_ANALYSIS", "3")),
     max_second_pass_reviews=int(os.getenv("MAX_SECOND_PASS_REVIEWS", "1")),
     enable_llm_claim_verification=os.getenv("ENABLE_LLM_CLAIM_VERIFICATION", "false").lower() == "true",
+    require_trusted_ready_source=os.getenv("REQUIRE_TRUSTED_READY_SOURCE", "true").lower() == "true",
+    min_grounded_ratio=float(os.getenv("MIN_GROUNDED_RATIO", "0.6")),
+    min_grounding_issue_score=float(os.getenv("MIN_GROUNDING_ISSUE_SCORE", "0.75")),
+    min_grounded_claims=int(os.getenv("MIN_GROUNDED_CLAIMS", "2")),
     openai_api_key=os.getenv("OPENAI_API_KEY"),
     openai_model=os.getenv("OPENAI_MODEL", "gpt-5.4-mini"),
     embedding_model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"),

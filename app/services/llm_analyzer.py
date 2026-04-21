@@ -151,9 +151,9 @@ class LLMAnalyzer:
         )
         effective_hold_reason = hold_reason or (remote_analysis.hold_reason if remote_analysis else None)
         if effective_hold_reason is None and (
-            grounding["grounded_ratio"] < 0.6
-            or grounding["issue_score"] < max(settings.hold_threshold + 0.05, 0.75)
-            or len(grounded_summary["grounded_claim_ids"]) < 2
+            grounding["grounded_ratio"] < settings.min_grounded_ratio
+            or grounding["issue_score"] < settings.min_grounding_issue_score
+            or len(grounded_summary["grounded_claim_ids"]) < settings.min_grounded_claims
         ):
             effective_hold_reason = (
                 f"grounding 검증 부족: grounded_ratio={grounding['grounded_ratio']}, issue_score={grounding['issue_score']}"

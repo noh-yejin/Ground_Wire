@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from hashlib import sha1
 import logging
 import json
@@ -12,6 +12,7 @@ from app.models import Issue
 from app.repository import IssueRepository
 from app.services.collection import NewsCollector
 from app.services.clustering import canonical_topic_key, cluster_articles, _extract_keywords, label_topic
+from app.services.crawling import is_google_news_url
 from app.services.llm_analyzer import LLMAnalyzer
 from app.services.preprocessing import preprocess_articles
 from app.services.rag import EvidenceRetriever
@@ -32,6 +33,8 @@ class NewsPipeline:
         try:
             raw_articles = self.collector.collect()
             articles = preprocess_articles(raw_articles)
+            articles = self.collector.resolve_article_links(articles)
+            articles = preprocess_articles(articles)
             self.repository.save_articles(articles)
             self.repository.save_job_run(
                 "collect_news_job",
@@ -45,11 +48,15 @@ class NewsPipeline:
 
     def analyze_only(self) -> list[Issue]:
         try:
-            articles = preprocess_articles(self.repository.list_articles())
+            articles = preprocess_articles(
+                _without_placeholder_links(_within_article_window(self.repository.list_articles()))
+            )
             if articles:
                 self.repository.save_articles(articles)
             else:
                 articles = preprocess_articles(self.collector.collect())
+                articles = self.collector.resolve_article_links(articles)
+                articles = preprocess_articles(articles)
                 self.repository.save_articles(articles)
 
             grouped_articles = _merge_equivalent_groups(cluster_articles(articles))
@@ -194,6 +201,29 @@ def _derive_topic(group: list) -> str:
     return label_topic(group)
 
 
+def _within_article_window(articles: list) -> list:
+    threshold = datetime.now(timezone.utc) - timedelta(hours=settings.article_window_hours)
+    selected = []
+    for article in articles:
+        published_at = article.published_at
+        if published_at.tzinfo is None:
+            published_at = published_at.replace(tzinfo=timezone.utc)
+        else:
+            published_at = published_at.astimezone(timezone.utc)
+        if published_at >= threshold:
+            selected.append(article)
+    return selected
+
+
+def _without_placeholder_links(articles: list) -> list:
+    return [
+        article
+        for article in articles
+        if not is_google_news_url(article.url)
+        and "example.com" not in article.url
+    ]
+
+
 def _merge_equivalent_groups(groups: list[list]) -> list[list]:
     merged: dict[str, list] = defaultdict(list)
     for group in groups:
@@ -214,7 +244,7 @@ def _build_hold_reason(group: list, evidence: list, reliability) -> str | None:
         return f"독립 출처 부족: {unique_sources}개"
     if len({item.source for item in evidence}) < settings.min_unique_sources:
         return "근거 문서의 출처 다양성이 부족합니다."
-    if not any(is_trusted_ready_source(item.source) for item in evidence):
+    if settings.require_trusted_ready_source and not any(is_trusted_ready_source(item.source) for item in evidence):
         return "신뢰 가능한 핵심 출처 근거가 부족합니다."
     if reliability.value < settings.hold_threshold:
         return f"신뢰도 점수 부족: {reliability.value}"

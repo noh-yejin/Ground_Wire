@@ -10,7 +10,7 @@ from app.config import settings
 from app.models import Article
 from app.repository import IssueRepository
 from app.sample_data import load_sample_articles
-from app.services.crawling import fetch_article_body, is_supported_for_crawl
+from app.services.crawling import fetch_article_body, is_google_news_url, is_supported_for_crawl, resolve_article_url
 from app.services.source_normalizer import normalize_source_name
 
 
@@ -105,6 +105,33 @@ class NewsCollector:
 
     def fetch_full_content(self, url: str) -> str | None:
         return fetch_article_body(url)
+
+    def resolve_article_links(self, articles: list[Article]) -> list[Article]:
+        resolved_articles: list[Article] = []
+        resolved_url_cache: dict[str, str] = {}
+        for article in articles:
+            if article.url not in resolved_url_cache:
+                resolved_url_cache[article.url] = resolve_article_url(article.url)
+            resolved_url = resolved_url_cache[article.url]
+            if is_google_news_url(resolved_url):
+                continue
+            if resolved_url == article.url:
+                resolved_articles.append(article)
+                continue
+            resolved_articles.append(
+                Article(
+                    id=sha1(f"{resolved_url}|{article.title}".encode("utf-8")).hexdigest()[:12],
+                    title=article.title,
+                    source=article.source,
+                    published_at=article.published_at,
+                    url=resolved_url,
+                    content=article.content,
+                    language=article.language,
+                    collected_at=article.collected_at,
+                    content_quality=article.content_quality,
+                )
+            )
+        return resolved_articles
 
     def _entry_to_article(self, entry, feed_source: str, collected_at: datetime) -> Article | None:
         url = getattr(entry, "link", None)

@@ -6,8 +6,12 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
 .Python
 .coverage
+htmlcov/
 
 # mac
 .DS_Store
@@ -19,12 +23,24 @@ venv/
 
 # vscode
 .vscode/
+.idea/
 
 docs/
 
 # sqlite / runtime db
 *.db
 *.sqlite3
+*.sqlite
+*.db-shm
+*.db-wal
+*.db-journal
+*.sqlite3-shm
+*.sqlite3-wal
+*.sqlite3-journal
 
 # logs
 *.log
+
+# local runtime files
+*.tmp
+*.bak

@@ -151,10 +151,21 @@ def is_low_signal_aggregator_article(title: str, content: str, source: str, url:
         return True
     if "google news" in joined.lower():
         return True
-    if "news.google.com" in url_text.lower():
+    if "news.google.com" in url_text.lower() and _is_google_news_wrapper_low_value(title_text, content_text):
         return True
     if "v.daum.net" in joined.lower() and _is_duplicateish(content_text, title_text):
         return True
     if "live" in title_text.lower() and "update" in title_text.lower():
         return True
     return False
+
+
+def _is_google_news_wrapper_low_value(title: str, content: str) -> bool:
+    if not content:
+        return True
+    if _is_duplicateish(content, title):
+        return True
+    if len(content) < 80:
+        return True
+    sentence_count = len([part for part in re.split(r"(?<=[.!?。！？])\s+", content) if part.strip()])
+    return sentence_count < 2 and len(content) < 140

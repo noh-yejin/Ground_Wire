@@ -51,7 +51,9 @@ def dashboard(request: Request) -> HTMLResponse:
     priority_issues = [issue for issue in ready_issues if issue.analysis.priority.value == "priority"]
     general_issues = [issue for issue in ready_issues if issue.analysis.priority.value == "general"]
     keyword_hub = _build_keyword_hub(issues)
+    runtime_status = _build_runtime_status()
     market_pulse = _build_market_pulse(issues, minutes=15)
+    search_rankings = _build_search_rankings(issues, runtime_status=runtime_status)
     return templates.TemplateResponse(
         request,
         "dashboard.html",
@@ -62,11 +64,12 @@ def dashboard(request: Request) -> HTMLResponse:
             "hold_issues": hold_issues,
             "keyword_hub": keyword_hub,
             "market_pulse": market_pulse,
+            "search_rankings": search_rankings,
             "issues_json": json.dumps(_serialize_dashboard_issues(issues), ensure_ascii=False),
             "app_name": settings.app_name,
             "hold_threshold": settings.hold_threshold,
             "scheduler_enabled": settings.enable_scheduler,
-            "runtime_status": _build_runtime_status(),
+            "runtime_status": runtime_status,
         },
     )
 
@@ -79,7 +82,9 @@ def search_ranking_preview(request: Request) -> HTMLResponse:
     priority_issues = [issue for issue in ready_issues if issue.analysis.priority.value == "priority"]
     general_issues = [issue for issue in ready_issues if issue.analysis.priority.value == "general"]
     keyword_hub = _build_keyword_hub(issues)
+    runtime_status = _build_runtime_status()
     market_pulse = _build_market_pulse(issues, minutes=15)
+    search_rankings = _build_search_rankings(issues, runtime_status=runtime_status)
     return templates.TemplateResponse(
         request,
         "dashboard_search_rank.html",
@@ -90,11 +95,12 @@ def search_ranking_preview(request: Request) -> HTMLResponse:
             "hold_issues": hold_issues,
             "keyword_hub": keyword_hub,
             "market_pulse": market_pulse,
+            "search_rankings": search_rankings,
             "issues_json": json.dumps(_serialize_dashboard_issues(issues), ensure_ascii=False),
             "app_name": f"{settings.app_name} · 실시간 검색어 순위",
             "hold_threshold": settings.hold_threshold,
             "scheduler_enabled": settings.enable_scheduler,
-            "runtime_status": _build_runtime_status(),
+            "runtime_status": runtime_status,
         },
     )
 
@@ -108,12 +114,14 @@ def list_issues() -> list[dict]:
 @app.get("/api/dashboard-data")
 def dashboard_data() -> dict:
     issues = repository.list_issues()
+    runtime_status = _build_runtime_status()
     return {
         "issues": _serialize_dashboard_issues(issues),
         "issue_cards": _serialize_issue_cards(issues),
         "keyword_hub": _build_keyword_hub(issues),
         "market_pulse": _build_market_pulse(issues, minutes=15),
-        "runtime_status": _build_runtime_status(),
+        "search_rankings": _build_search_rankings(issues, runtime_status=runtime_status),
+        "runtime_status": runtime_status,
     }
 
 
@@ -310,9 +318,14 @@ def _serialize_grounding_for_ui(grounding_details: dict | None) -> dict:
 
 
 def _build_market_pulse(issues: list, minutes: int = 15) -> dict:
-    threshold = datetime.now(timezone.utc) - timedelta(minutes=minutes)
-    rise_now_threshold = datetime.now(timezone.utc) - timedelta(hours=1)
-    rise_prev_threshold = datetime.now(timezone.utc) - timedelta(hours=2)
+    now = datetime.now(timezone.utc)
+    threshold = now - timedelta(minutes=minutes)
+    rise_now_threshold = now - timedelta(hours=1)
+    rise_prev_threshold = now - timedelta(hours=2)
+    bucket_count = 8
+    bucket_minutes = max(minutes, 15)
+    bucket_window = timedelta(minutes=bucket_minutes * bucket_count)
+    bucket_threshold = now - bucket_window
     recent_keyword_counter: Counter[str] = Counter()
     recent_signal_counter: Counter[str] = Counter()
     recent_topic_counter: Counter[str] = Counter()
@@ -320,6 +333,9 @@ def _build_market_pulse(issues: list, minutes: int = 15) -> dict:
     rising_prev_counter: Counter[str] = Counter()
     recent_issue_scores: list[tuple[float, object]] = []
     recent_article_count = 0
+    article_series = [0] * bucket_count
+    signal_series: defaultdict[str, list[int]] = defaultdict(lambda: [0] * bucket_count)
+    keyword_series: defaultdict[str, list[int]] = defaultdict(lambda: [0] * bucket_count)
 
     for issue in issues:
         recent_articles = []
@@ -331,6 +347,20 @@ def _build_market_pulse(issues: list, minutes: int = 15) -> dict:
                 timestamp = timestamp.astimezone(timezone.utc)
             if timestamp >= threshold:
                 recent_articles.append(article)
+            bucket_index = _market_pulse_bucket_index(
+                timestamp=timestamp,
+                now=now,
+                bucket_minutes=bucket_minutes,
+                bucket_count=bucket_count,
+            )
+            if bucket_index is not None and timestamp >= bucket_threshold:
+                article_series[bucket_index] += 1
+                for signal in issue.analysis.key_signals[:4]:
+                    if signal:
+                        signal_series[signal][bucket_index] += 1
+                for keyword in issue.analysis.keywords[:4]:
+                    if keyword:
+                        keyword_series[keyword][bucket_index] += 1
             for keyword in issue.analysis.keywords[:4]:
                 if timestamp >= rise_now_threshold:
                     rising_now_counter.update([keyword])
@@ -361,6 +391,8 @@ def _build_market_pulse(issues: list, minutes: int = 15) -> dict:
         recent_article_count=recent_article_count,
         minutes=minutes,
     )
+    top_signal_entry = recent_signal_counter.most_common(1)[0] if recent_signal_counter else None
+    fallback_keyword_entry = recent_keyword_counter.most_common(1)[0] if recent_keyword_counter else None
 
     return {
         "window_minutes": minutes,
@@ -377,8 +409,143 @@ def _build_market_pulse(issues: list, minutes: int = 15) -> dict:
         "focus_issue_id": focus_issue.id if focus_issue else None,
         "focus_issue_topic": _display_topic(focus_issue.topic) if focus_issue else None,
         "rising_keyword": rising_keyword,
+        "sparkline_series": {
+            "article_counts": article_series,
+            "top_signal": {
+                "label": top_signal_entry[0] if top_signal_entry else None,
+                "values": signal_series[top_signal_entry[0]]
+                if top_signal_entry
+                else [0] * bucket_count,
+            },
+            "rising_keyword": {
+                "label": rising_keyword["keyword"] if rising_keyword else None,
+                "values": keyword_series[rising_keyword["keyword"]]
+                if rising_keyword and rising_keyword["keyword"] in keyword_series
+                else (
+                    keyword_series[fallback_keyword_entry[0]]
+                    if fallback_keyword_entry
+                    else [0] * bucket_count
+                ),
+            },
+        },
         "promotion_candidate": promotion_candidate,
     }
+
+
+def _build_search_rankings(issues: list, runtime_status: dict | None = None) -> dict:
+    now = datetime.now(timezone.utc)
+    windows = (
+        (6, "최근 6시간 vs 직전 6시간"),
+        (12, "최근 12시간 vs 직전 12시간"),
+        (24, "최근 24시간 vs 직전 24시간"),
+    )
+
+    for hours, label in windows:
+        result = _compute_search_rankings_for_window(issues, now=now, hours=hours)
+        if result:
+            return {
+                "label": label,
+                "note": f"{label} 기사 흐름 및 키워드 출현량 기준 계산 순위",
+                "updated_text": _format_ranking_updated(runtime_status or {}),
+                "rankings": result,
+            }
+
+    return {
+        "label": "최근 데이터 없음",
+        "note": "키워드 순위를 계산할 데이터가 아직 충분하지 않습니다.",
+        "updated_text": _format_ranking_updated(runtime_status or {}),
+        "rankings": [],
+    }
+
+
+def _compute_search_rankings_for_window(issues: list, now: datetime, hours: int) -> list[dict]:
+    current_threshold = now - timedelta(hours=hours)
+    previous_threshold = now - timedelta(hours=hours * 2)
+    current_map: Counter[str] = Counter()
+    previous_map: Counter[str] = Counter()
+
+    for issue in issues:
+        labels = [
+            label.strip()
+            for label in [*issue.analysis.keywords[:3], *issue.analysis.key_signals[:3]]
+            if str(label or "").strip()
+        ]
+        if not labels:
+            continue
+
+        current_articles = 0
+        previous_articles = 0
+        freshness_score = 0.0
+        for article in issue.articles:
+            timestamp = article.published_at or article.collected_at
+            if timestamp.tzinfo is None:
+                timestamp = timestamp.replace(tzinfo=timezone.utc)
+            else:
+                timestamp = timestamp.astimezone(timezone.utc)
+            if timestamp >= current_threshold:
+                current_articles += 1
+                age_hours = max((now - timestamp).total_seconds() / 3600, 0.0)
+                freshness_score += max(0.5, 1.8 - (age_hours / max(hours, 1)))
+            elif timestamp >= previous_threshold:
+                previous_articles += 1
+
+        grounding = issue.analysis.grounding_details.get("grounding", {}) if issue.analysis.grounding_details else {}
+        reliability_bonus = round(issue.reliability.value * 2)
+        trust_bonus = float(grounding.get("issue_score", issue.reliability.value) or issue.reliability.value) * 4
+        priority_bonus = 2 if issue.analysis.priority.value == "priority" else 0
+        ready_bonus = 1 if issue.status.value == "READY" else 0
+        current_score = current_articles * 5 + freshness_score + trust_bonus + reliability_bonus + priority_bonus + ready_bonus
+        previous_score = previous_articles * 4 + (trust_bonus * 0.55) + reliability_bonus + priority_bonus
+
+        for index, label in enumerate(labels[:6]):
+            label_weight = max(0.45, (6 - index) * 0.42)
+            if current_articles > 0:
+                current_map[label] += current_score + label_weight
+            if previous_articles > 0:
+                previous_map[label] += previous_score + label_weight
+
+    current_ranked = sorted(current_map.items(), key=lambda item: (-item[1], item[0]))[:10]
+    if not current_ranked:
+        return []
+
+    previous_rank_map = {
+        label: index + 1
+        for index, (label, score) in enumerate(sorted(previous_map.items(), key=lambda item: (-item[1], item[0])))
+        if score > 0
+    }
+
+    rankings = []
+    for index, (label, score) in enumerate(current_ranked, start=1):
+        previous_rank = previous_rank_map.get(label)
+        if previous_rank is None:
+            movement = "new"
+            value = "N"
+        elif previous_rank > index:
+            movement = "up"
+            value = previous_rank - index
+        elif previous_rank < index:
+            movement = "down"
+            value = index - previous_rank
+        else:
+            movement = "same"
+            value = "-"
+        rankings.append(
+            {
+                "rank": index,
+                "label": label,
+                "movement": movement,
+                "value": value,
+                "score": round(score, 3),
+            }
+        )
+    return rankings
+
+
+def _format_ranking_updated(runtime_status: dict) -> str:
+    latest_analyze = runtime_status.get("latest_analyze", {}) or {}
+    latest_collect = runtime_status.get("latest_collect", {}) or {}
+    source = latest_analyze.get("created_at_display") or latest_collect.get("created_at_display") or ""
+    return source or "업데이트 대기"
 
 
 def _build_funnel_metrics() -> dict:
@@ -478,8 +645,35 @@ def _build_market_pulse_fallback(issues: list, minutes: int) -> dict:
         "focus_issue_id": focus_issue.id if focus_issue else None,
         "focus_issue_topic": _display_topic(focus_issue.topic) if focus_issue else None,
         "rising_keyword": None,
+        "sparkline_series": {
+            "article_counts": [0] * 8,
+            "top_signal": {
+                "label": signal_counter.most_common(1)[0][0] if signal_counter else None,
+                "values": [0] * 8,
+            },
+            "rising_keyword": {
+                "label": keyword_counter.most_common(1)[0][0] if keyword_counter else None,
+                "values": [0] * 8,
+            },
+        },
         "promotion_candidate": promotion_candidate,
     }
+
+
+def _market_pulse_bucket_index(
+    timestamp: datetime,
+    now: datetime,
+    bucket_minutes: int,
+    bucket_count: int,
+) -> int | None:
+    diff_seconds = (now - timestamp).total_seconds()
+    if diff_seconds < 0:
+        return bucket_count - 1
+    bucket_seconds = bucket_minutes * 60
+    if diff_seconds >= bucket_seconds * bucket_count:
+        return None
+    index = bucket_count - 1 - int(diff_seconds // bucket_seconds)
+    return max(0, min(index, bucket_count - 1))
 
 
 def _pick_rising_keyword(now_counter: Counter[str], prev_counter: Counter[str]) -> dict | None:
