@@ -37,7 +37,6 @@ class Settings:
     hold_threshold: float = 0.65
     min_articles_per_issue: int = 2
     min_unique_sources: int = 2
-    slack_webhook_url: str | None = None
     enable_scheduler: bool = True
     presentation_mode: bool = False
     collect_interval_minutes: int = 15
@@ -143,7 +142,6 @@ class Settings:
 
 
 settings = Settings(
-    slack_webhook_url=os.getenv("SLACK_WEBHOOK_URL"),
     enable_scheduler=os.getenv("ENABLE_SCHEDULER", "true").lower() == "true",
     presentation_mode=os.getenv("PRESENTATION_MODE", "false").lower() == "true",
     hold_threshold=float(os.getenv("HOLD_THRESHOLD", "0.65")),

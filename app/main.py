@@ -7,7 +7,7 @@ from pathlib import Path
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -18,7 +18,6 @@ from app.repository import IssueRepository
 from app.services.clustering import canonicalize_topic
 from app.services.pipeline import NewsPipeline
 from app.services.scheduler import SchedulerService
-from app.services.slack_reporter import send_issue
 from app.services.ui_localizer import ui_localizer
 
 repository = IssueRepository()
@@ -157,14 +156,6 @@ def update_scheduler(request: SchedulerUpdateRequest) -> dict:
         {"collect_interval_minutes": request.collect_interval_minutes},
     )
     return _build_runtime_status()
-
-
-@app.post("/api/issues/{issue_id}/report")
-def report_issue(issue_id: str) -> dict:
-    issue = repository.get_issue(issue_id)
-    if issue is None:
-        raise HTTPException(status_code=404, detail="Issue not found")
-    return send_issue(issue)
 
 
 def _build_runtime_status() -> dict:
