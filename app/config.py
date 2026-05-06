@@ -56,6 +56,10 @@ class Settings:
     openai_api_key: str | None = None
     openai_model: str = "gpt-5.4-mini"
     embedding_model: str = "text-embedding-3-small"
+    reference_docs_path: str = "reference_docs"
+    reference_doc_extensions: tuple[str, ...] = (".md", ".txt", ".html")
+    reference_fetch_timeout_seconds: int = 10
+    reference_fetch_timeout_seconds: int = 10
     rss_feed_urls: tuple[str, ...] = (
         "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en",
         "https://news.google.com/rss/search?q=AI+when:1d&hl=en-US&gl=US&ceid=US:en",
@@ -164,6 +168,8 @@ settings = Settings(
     openai_api_key=os.getenv("OPENAI_API_KEY"),
     openai_model=os.getenv("OPENAI_MODEL", "gpt-5.4-mini"),
     embedding_model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"),
+    reference_docs_path=os.getenv("REFERENCE_DOCS_PATH", "reference_docs"),
+    reference_fetch_timeout_seconds=int(os.getenv("REFERENCE_FETCH_TIMEOUT_SECONDS", "10")),
     rss_feed_urls=_split_csv_env(
         "RSS_FEED_URLS",
         (

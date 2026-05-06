@@ -1,0 +1,169 @@
+{
+  "sources": [
+    {
+      "id": "macro-notes",
+      "name": "Macro Notes",
+      "kind": "research",
+      "location": "macro-notes",
+      "authority_score": 0.82,
+      "is_active": true,
+      "refresh_minutes": 60,
+      "notes": "Example registry entry for macro research notes."
+    },
+    {
+      "id": "federal-reserve-rss",
+      "name": "Federal Reserve RSS",
+      "kind": "government",
+      "location": "federal-reserve-rss",
+      "authority_score": 0.98,
+      "is_active": false,
+      "refresh_minutes": 180,
+      "seed_urls": [
+        "https://www.federalreserve.gov/feeds/press_monetary.xml"
+      ],
+      "fetch_config": {
+        "mode": "rss",
+        "respect_robots": true,
+        "follow_entry_links": false,
+        "allow_summary_fallback": true,
+        "max_entries": 6,
+        "content_selectors": ["main", ".col-xs-12", "#content"],
+        "remove_selectors": ["header", "footer", ".socialShare"]
+      },
+      "notes": "Prefer official RSS over generic HTML scraping."
+    },
+    {
+      "id": "sec-press-html",
+      "name": "SEC Press Releases HTML",
+      "kind": "regulator",
+      "location": "sec-press-html",
+      "authority_score": 0.97,
+      "is_active": false,
+      "refresh_minutes": 120,
+      "seed_urls": [
+        "https://www.sec.gov/newsroom/press-releases"
+      ],
+      "fetch_config": {
+        "mode": "html_list",
+        "respect_robots": true,
+        "max_entries": 8,
+        "entry_link_selectors": ["table a", "main a"],
+        "entry_url_prefixes": ["https://www.sec.gov/newsroom/press-releases/"],
+        "content_selectors": ["main", "#main-content", ".region-content"],
+        "remove_selectors": ["header", "footer", ".share-this-page"],
+        "request_headers": {
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        }
+      },
+      "notes": "Live smoke tests succeeded via HTML list mode."
+    },
+    {
+      "id": "sec-litigation-html",
+      "name": "SEC Litigation HTML",
+      "kind": "regulator",
+      "location": "sec-litigation-html",
+      "authority_score": 0.97,
+      "is_active": false,
+      "refresh_minutes": 120,
+      "seed_urls": [
+        "https://www.sec.gov/litigation/litreleases.htm"
+      ],
+      "fetch_config": {
+        "mode": "html_list",
+        "respect_robots": true,
+        "max_entries": 8,
+        "entry_link_selectors": ["table a", "main a"],
+        "entry_url_prefixes": [
+          "https://www.sec.gov/litigation/litreleases/",
+          "https://www.sec.gov/enforcement-litigation/litigation-releases/"
+        ],
+        "content_selectors": ["main", "#main-content", ".region-content"],
+        "remove_selectors": ["header", "footer", ".share-this-page"],
+        "request_headers": {
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        }
+      },
+      "notes": "Live smoke tests succeeded via HTML list mode."
+    },
+    {
+      "id": "imf-latest-releases",
+      "name": "IMF Latest Releases",
+      "kind": "government",
+      "location": "imf-latest-releases",
+      "authority_score": 0.95,
+      "is_active": false,
+      "refresh_minutes": 180,
+      "seed_urls": [
+        "https://www.imf.org/en/Home"
+      ],
+      "fetch_config": {
+        "mode": "html_list",
+        "respect_robots": true,
+        "max_entries": 8,
+        "entry_link_selectors": [
+          "a[href*='/en/news/articles/']",
+          "a[href*='/en/News/Articles/']"
+        ],
+        "entry_url_prefixes": [
+          "https://www.imf.org/en/news/articles/"
+        ],
+        "content_selectors": ["main", ".content", ".imfsg-article-body"],
+        "remove_selectors": ["header", "footer", ".related-content", ".social-share"],
+        "max_content_chars": 12000
+      },
+      "notes": "IMF currently works better via latest releases listing than through a visible RSS feed."
+    },
+    {
+      "id": "ecb-rss",
+      "name": "ECB RSS",
+      "kind": "government",
+      "location": "ecb-rss",
+      "authority_score": 0.97,
+      "is_active": false,
+      "refresh_minutes": 180,
+      "seed_urls": [
+        "https://www.ecb.europa.eu/rss/press.html"
+      ],
+      "fetch_config": {
+        "mode": "rss",
+        "respect_robots": true,
+        "follow_entry_links": true,
+        "allow_summary_fallback": true,
+        "max_entries": 8,
+        "content_selectors": ["main", ".section", "#main-wrapper"],
+        "remove_selectors": ["header", "footer", ".ecb-social-sharing"],
+        "max_content_chars": 18000
+      },
+      "notes": "ECB publishes multiple official RSS feeds; press/news feed is preferred."
+    },
+    {
+      "id": "bank-of-korea-web",
+      "name": "Bank of Korea Web",
+      "kind": "government",
+      "location": "bank-of-korea-web",
+      "authority_score": 0.98,
+      "is_active": false,
+      "refresh_minutes": 180,
+      "seed_urls": [
+        "https://www.bok.or.kr/eng/main/contents.do?menuNo=400185"
+      ],
+      "fetch_config": {
+        "mode": "html",
+        "respect_robots": true,
+        "content_selectors": ["main", ".content", "#content"],
+        "remove_selectors": ["header", ".breadcrumb", ".share-area", ".related-links"]
+      },
+      "notes": "Robots currently block this path in smoke tests; keep disabled unless you have an approved access route."
+    },
+    {
+      "id": "bank-of-korea-manual",
+      "name": "Bank of Korea Manual Docs",
+      "kind": "government",
+      "location": "bank-of-korea-manual",
+      "authority_score": 0.98,
+      "is_active": false,
+      "refresh_minutes": 1440,
+      "notes": "Use for manually downloaded or approved-access BOK documents because tested web paths were blocked by robots policy."
+    }
+  ]
+}

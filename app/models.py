@@ -55,6 +55,61 @@ class EvidenceSnippet:
     quote: str
     url: str
     score: float = 0.0
+    evidence_type: str = "news"
+    document_id: str | None = None
+    title: str | None = None
+    source_id: str | None = None
+    source_type: str | None = None
+    authority_score: float | None = None
+    freshness_score: float | None = None
+    contradiction_hint: bool = False
+
+
+@dataclass(slots=True)
+class ReferenceSource:
+    id: str
+    name: str
+    kind: str
+    location: str
+    authority_score: float = 0.8
+    is_active: bool = True
+    notes: str | None = None
+    last_synced_at: datetime | None = None
+    seed_urls: list[str] = field(default_factory=list)
+    refresh_minutes: int = 60
+    fetch_config: dict[str, object] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
+class ReferenceDocument:
+    id: str
+    source_id: str
+    title: str
+    source: str
+    content: str
+    doc_type: str
+    updated_at: datetime
+    url: str = ""
+    file_path: str | None = None
+    source_type: str = "manual"
+    authority_score: float = 0.8
+    content_hash: str = ""
+
+
+@dataclass(slots=True)
+class ReferenceChunk:
+    id: str
+    document_id: str
+    source_id: str
+    title: str
+    source: str
+    text: str
+    chunk_index: int
+    updated_at: datetime
+    url: str = ""
+    source_type: str = "manual"
+    authority_score: float = 0.8
+    content_hash: str = ""
 
 
 @dataclass(slots=True)
@@ -64,6 +119,8 @@ class ReliabilityScore:
     recency: float
     evidence_coverage: float
     cross_source_confirmation: float
+    reference_strength: float = 0.0
+    contradiction_penalty: float = 0.0
     reasons: list[str] = field(default_factory=list)
 
 

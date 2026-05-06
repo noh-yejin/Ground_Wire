@@ -31,6 +31,90 @@ class SchedulerUpdateRequest(BaseModel):
     collect_interval_minutes: int = Field(ge=5, le=60)
 
 
+class ArticlePayload(BaseModel):
+    source: str
+    title: str
+    url: str
+    published_at: str
+    collected_at: str | None = None
+
+
+class ClaimPayload(BaseModel):
+    claim: str | None = None
+    support_count: int = 0
+    trusted_support_count: int = 0
+    external_support_count: int = 0
+    reference_support_count: int = 0
+    authoritative_reference_count: int = 0
+    contradiction_count: int = 0
+    contradiction_weight: float = 0.0
+    support_strength: float = 0.0
+    freshness_alignment: float = 0.0
+    counter_update_count: int = 0
+    score: float = 0.0
+    ready: bool = False
+
+
+class GroundingDetailsPayload(BaseModel):
+    claims: list[ClaimPayload] = Field(default_factory=list)
+    grounding: dict = Field(default_factory=dict)
+    grounded_summary: dict = Field(default_factory=dict)
+    decision: dict = Field(default_factory=dict)
+    llm: dict = Field(default_factory=dict)
+
+
+class ReliabilityBreakdownPayload(BaseModel):
+    source_diversity: float
+    recency: float
+    evidence_coverage: float
+    cross_source_confirmation: float
+    reference_strength: float
+    contradiction_penalty: float
+
+
+class IssuePayload(BaseModel):
+    id: str
+    topic: str
+    status: str
+    priority: str
+    summary: str
+    detail_summary: str
+    keywords: list[str]
+    key_signals: list[str]
+    key_points: list[str]
+    trend_summary: str
+    risk_points: list[str]
+    sentiment: str
+    market_impact: str
+    policy_risk: str
+    volatility_risk: str
+    hold_reason: str | None = None
+    grounded: bool
+    reliability: float
+    reliability_breakdown: ReliabilityBreakdownPayload
+    grounding_details: GroundingDetailsPayload
+    sources: list[str]
+    article_count: int
+    updated_at: str
+    articles: list[ArticlePayload]
+    hourly_counts: dict[str, int] = Field(default_factory=dict)
+
+
+class IssueListResponse(BaseModel):
+    generated_at: str
+    count: int
+    items: list[IssuePayload]
+
+
+class DashboardDataResponse(BaseModel):
+    generated_at: str
+    issues: IssueListResponse
+    keyword_hub: dict
+    market_pulse: dict
+    search_rankings: dict
+    runtime_status: dict
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     scheduler_service.start()
@@ -104,24 +188,35 @@ def search_ranking_preview(request: Request) -> HTMLResponse:
     )
 
 
-@app.get("/api/issues")
-def list_issues() -> list[dict]:
+@app.get("/api/issues", response_model=IssueListResponse)
+def list_issues() -> IssueListResponse:
     issues = repository.list_issues()
-    return _serialize_issue_cards(issues)
+    items = [_serialize_issue_payload(issue) for issue in issues]
+    return IssueListResponse(
+        generated_at=datetime.now(timezone.utc).isoformat(),
+        count=len(items),
+        items=items,
+    )
 
 
-@app.get("/api/dashboard-data")
-def dashboard_data() -> dict:
+@app.get("/api/dashboard-data", response_model=DashboardDataResponse)
+def dashboard_data() -> DashboardDataResponse:
     issues = repository.list_issues()
     runtime_status = _build_runtime_status()
-    return {
-        "issues": _serialize_dashboard_issues(issues),
-        "issue_cards": _serialize_issue_cards(issues),
-        "keyword_hub": _build_keyword_hub(issues),
-        "market_pulse": _build_market_pulse(issues, minutes=15),
-        "search_rankings": _build_search_rankings(issues, runtime_status=runtime_status),
-        "runtime_status": runtime_status,
-    }
+    generated_at = datetime.now(timezone.utc).isoformat()
+    items = [_serialize_issue_payload(issue, article_limit=6, include_hourly_counts=True) for issue in issues]
+    return DashboardDataResponse(
+        generated_at=generated_at,
+        issues=IssueListResponse(
+            generated_at=generated_at,
+            count=len(items),
+            items=items,
+        ),
+        keyword_hub=_build_keyword_hub(issues),
+        market_pulse=_build_market_pulse(issues, minutes=15),
+        search_rankings=_build_search_rankings(issues, runtime_status=runtime_status),
+        runtime_status=runtime_status,
+    )
 
 
 @app.post("/api/jobs/collect")
@@ -175,6 +270,7 @@ def _build_runtime_status() -> dict:
         "funnel_metrics": _build_funnel_metrics(),
         "article_window_hours": settings.article_window_hours,
         "llm": pipeline.analyzer.debug_status(),
+        "reference_sources": _build_reference_source_health(),
     }
 
 
@@ -199,89 +295,66 @@ def _build_keyword_hub(issues: list) -> dict:
 
 
 def _serialize_dashboard_issues(issues: list) -> list[dict]:
-    payload = []
-    for issue in issues:
-        hourly_counts: dict[str, int] = defaultdict(int)
-        for article in issue.articles:
-            bucket = article.published_at.strftime("%Y-%m-%d %H:00")
-            hourly_counts[bucket] += 1
-        payload.append(
-            {
-                "id": issue.id,
-                "topic": ui_localizer.localize_label(_display_topic(issue.topic), allow_remote=False),
-                "status": issue.status.value,
-                "priority": issue.analysis.priority.value,
-                "keywords": [ui_localizer.localize_label(item, allow_remote=False) for item in issue.analysis.keywords],
-                "key_signals": [ui_localizer.localize_label(item, allow_remote=False) for item in issue.analysis.key_signals],
-                "summary": ui_localizer.localize_summary(issue.analysis.summary, allow_remote=False),
-                "detail_summary": ui_localizer.localize_detail(issue.analysis.summary, allow_remote=False),
-                "sentiment": issue.analysis.sentiment.value,
-                "reliability": issue.reliability.value,
-                "key_points": [ui_localizer.localize_point(item, max_chars=54, allow_remote=False) for item in issue.analysis.key_points],
-                "trend_summary": ui_localizer.localize_summary(issue.analysis.trend_summary, allow_remote=False),
-                "risk_points": [ui_localizer.localize_point(item, max_chars=54, allow_remote=False) for item in issue.analysis.risk_points],
-                "market_impact": issue.analysis.market_impact.value,
-                "policy_risk": issue.analysis.policy_risk.value,
-                "volatility_risk": issue.analysis.volatility_risk.value,
-                "hold_reason": issue.analysis.hold_reason,
-                "grounded": issue.analysis.grounded,
-                "grounding_details": _serialize_grounding_for_ui(issue.analysis.grounding_details),
-                "reliability_breakdown": {
-                    "source_diversity": issue.reliability.source_diversity,
-                    "recency": issue.reliability.recency,
-                    "evidence_coverage": issue.reliability.evidence_coverage,
-                    "cross_source_confirmation": issue.reliability.cross_source_confirmation,
-                },
-                "articles": [
-                    {
-                        "source": article.source,
-                        "title": article.title,
-                        "url": article.url,
-                        "published_at": article.published_at.isoformat(),
-                        "collected_at": article.collected_at.isoformat() if article.collected_at else None,
-                    }
-                    for article in issue.articles[:6]
-                ],
-                "hourly_counts": dict(sorted(hourly_counts.items())),
-            }
-        )
-    return payload
+    return [
+        _serialize_issue_payload(issue, article_limit=6, include_hourly_counts=True).model_dump()
+        for issue in issues
+    ]
 
 
 def _serialize_issue_cards(issues: list) -> list[dict]:
-    return [
-        {
-            "id": issue.id,
-            "topic": ui_localizer.localize_label(_display_topic(issue.topic), allow_remote=False),
-            "status": issue.status.value,
-            "reliability": issue.reliability.value,
-            "keywords": [ui_localizer.localize_label(item, allow_remote=False) for item in issue.keywords],
-            "summary": ui_localizer.localize_summary(issue.analysis.summary, allow_remote=False),
-            "key_signals": [ui_localizer.localize_label(item, allow_remote=False) for item in issue.analysis.key_signals],
-            "priority": issue.analysis.priority.value,
-            "sentiment": issue.analysis.sentiment.value,
-            "market_impact": issue.analysis.market_impact.value,
-            "policy_risk": issue.analysis.policy_risk.value,
-            "volatility_risk": issue.analysis.volatility_risk.value,
-            "risk_points": issue.analysis.risk_points,
-            "grounded": issue.analysis.grounded,
-            "grounding_details": _serialize_grounding_for_ui(issue.analysis.grounding_details),
-            "sources": sorted({article.source for article in issue.articles}),
-            "article_count": len(issue.articles),
-            "updated_at": issue.updated_at.isoformat(),
-            "articles": [
-                {
-                    "source": article.source,
-                    "title": article.title,
-                    "url": article.url,
-                    "published_at": article.published_at.isoformat(),
-                    "collected_at": article.collected_at.isoformat() if article.collected_at else None,
-                }
-                for article in issue.articles
-            ],
-        }
-        for issue in issues
-    ]
+    return [_serialize_issue_payload(issue).model_dump() for issue in issues]
+
+
+def _serialize_issue_payload(issue, article_limit: int | None = None, include_hourly_counts: bool = False) -> IssuePayload:
+    articles = issue.articles if article_limit is None else issue.articles[:article_limit]
+    hourly_counts: dict[str, int] = defaultdict(int)
+    if include_hourly_counts:
+        for article in issue.articles:
+            bucket = article.published_at.strftime("%Y-%m-%d %H:00")
+            hourly_counts[bucket] += 1
+    return IssuePayload(
+        id=issue.id,
+        topic=ui_localizer.localize_label(_display_topic(issue.topic), allow_remote=False),
+        status=issue.status.value,
+        priority=issue.analysis.priority.value,
+        summary=ui_localizer.localize_summary(issue.analysis.summary, allow_remote=False),
+        detail_summary=ui_localizer.localize_detail(issue.analysis.summary, allow_remote=False),
+        keywords=[ui_localizer.localize_label(item, allow_remote=False) for item in issue.analysis.keywords],
+        key_signals=[ui_localizer.localize_label(item, allow_remote=False) for item in issue.analysis.key_signals],
+        key_points=[ui_localizer.localize_point(item, max_chars=54, allow_remote=False) for item in issue.analysis.key_points],
+        trend_summary=ui_localizer.localize_summary(issue.analysis.trend_summary, allow_remote=False),
+        risk_points=[ui_localizer.localize_point(item, max_chars=54, allow_remote=False) for item in issue.analysis.risk_points],
+        sentiment=issue.analysis.sentiment.value,
+        market_impact=issue.analysis.market_impact.value,
+        policy_risk=issue.analysis.policy_risk.value,
+        volatility_risk=issue.analysis.volatility_risk.value,
+        hold_reason=issue.analysis.hold_reason,
+        grounded=issue.analysis.grounded,
+        reliability=issue.reliability.value,
+        reliability_breakdown=ReliabilityBreakdownPayload(
+            source_diversity=issue.reliability.source_diversity,
+            recency=issue.reliability.recency,
+            evidence_coverage=issue.reliability.evidence_coverage,
+            cross_source_confirmation=issue.reliability.cross_source_confirmation,
+            reference_strength=issue.reliability.reference_strength,
+            contradiction_penalty=issue.reliability.contradiction_penalty,
+        ),
+        grounding_details=GroundingDetailsPayload(**_serialize_grounding_for_ui(issue.analysis.grounding_details)),
+        sources=sorted({article.source for article in issue.articles}),
+        article_count=len(issue.articles),
+        updated_at=issue.updated_at.isoformat(),
+        articles=[
+            ArticlePayload(
+                source=article.source,
+                title=article.title,
+                url=article.url,
+                published_at=article.published_at.isoformat(),
+                collected_at=article.collected_at.isoformat() if article.collected_at else None,
+            )
+            for article in articles
+        ],
+        hourly_counts=dict(sorted(hourly_counts.items())),
+    )
 
 
 def _serialize_grounding_for_ui(grounding_details: dict | None) -> dict:
@@ -294,7 +367,13 @@ def _serialize_grounding_for_ui(grounding_details: dict | None) -> dict:
                 "support_count": item.get("support_count", 0),
                 "trusted_support_count": item.get("trusted_support_count", 0),
                 "external_support_count": item.get("external_support_count", 0),
+                "reference_support_count": item.get("reference_support_count", 0),
+                "authoritative_reference_count": item.get("authoritative_reference_count", 0),
                 "contradiction_count": item.get("contradiction_count", 0),
+                "contradiction_weight": item.get("contradiction_weight", 0),
+                "support_strength": item.get("support_strength", 0),
+                "freshness_alignment": item.get("freshness_alignment", 0),
+                "counter_update_count": item.get("counter_update_count", 0),
                 "score": item.get("score", 0),
                 "ready": item.get("ready", False),
             }
@@ -305,6 +384,60 @@ def _serialize_grounding_for_ui(grounding_details: dict | None) -> dict:
         "grounded_summary": details.get("grounded_summary", {}),
         "decision": details.get("decision", {}),
         "llm": details.get("llm", {}),
+    }
+
+
+def _build_reference_source_health() -> dict:
+    sources = repository.list_reference_sources(active_only=True)
+    runs = repository.list_reference_sync_runs(limit=max(len(sources) * 4, 20))
+    run_map: dict[str, dict] = {}
+    for run in runs:
+        run_map.setdefault(run["source_id"], run)
+
+    summary = []
+    stale_count = 0
+    failing_count = 0
+    now = datetime.now(timezone.utc)
+    for source in sources:
+        last_synced = source.last_synced_at
+        if last_synced is not None:
+            if last_synced.tzinfo is None:
+                last_synced = last_synced.replace(tzinfo=timezone.utc)
+            else:
+                last_synced = last_synced.astimezone(timezone.utc)
+        latest_run = run_map.get(source.id, {})
+        status = latest_run.get("status", "UNKNOWN")
+        details = latest_run.get("details", {}) or {}
+        stale = True
+        if last_synced is not None:
+            stale_after_minutes = max(source.refresh_minutes * 2, 60)
+            stale = (now - last_synced).total_seconds() > stale_after_minutes * 60
+        if stale:
+            stale_count += 1
+        if status not in {"SUCCESS", "UNKNOWN"}:
+            failing_count += 1
+        summary.append(
+            {
+                "id": source.id,
+                "name": source.name,
+                "kind": source.kind,
+                "authority_score": source.authority_score,
+                "refresh_minutes": source.refresh_minutes,
+                "last_synced_at": source.last_synced_at.isoformat() if source.last_synced_at else None,
+                "status": status,
+                "stale": stale,
+                "document_count": details.get("document_count", 0),
+                "chunk_count": details.get("chunk_count", 0),
+                "failures": details.get("failures", [])[:3],
+            }
+        )
+    summary.sort(key=lambda item: (item["status"] == "SUCCESS", not item["stale"], -(item["document_count"] or 0), item["name"]))
+
+    return {
+        "active_count": len(sources),
+        "stale_count": stale_count,
+        "failing_count": failing_count,
+        "sources": summary,
     }
 
 

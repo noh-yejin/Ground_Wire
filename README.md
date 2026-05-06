@@ -55,6 +55,7 @@ GroundWire는 실시간 뉴스 데이터를 기반으로, **검토 가능한 이
 - 기사 정제 및 저품질 / 중복 제거
 - 유사 기사 클러스터링 → 이슈 단위 분석
 - **RAG 기반 근거(evidence) 수집**
+- **외부 reference corpus 기반 RAG 확장**
 - **신뢰도 기반 필터링**
 - **LLM + grounding 기반 분석**
 - `READY` / `HOLD` 판정
@@ -94,7 +95,15 @@ pip install -r requirements.txt
 OPENAI_API_KEY=your_api_key_here
 OPENAI_MODEL=model_here
 EMBEDDING_MODEL=embedding_model_here
+REFERENCE_DOCS_PATH=reference_docs
+REFERENCE_FETCH_TIMEOUT_SECONDS=10
 ```
+- `reference_docs/` 폴더에는 정책문서, IR 메모, 내부 리서치 문서 같은 참조 문서를 둘 수 있습니다.
+- `reference_docs/sources.json` 파일을 만들면 reference source의 종류와 authority score를 등록할 수 있습니다.
+- `seed_urls`를 등록하면 분석 전에 외부 문서를 자동으로 fetch해서 reference corpus에 반영합니다.
+- `fetch_config`로 `respect_robots`, `content_selectors`, `remove_selectors`, `title_selectors`를 source별로 조정할 수 있습니다.
+- 가능한 기관은 일반 HTML 페이지보다 공식 RSS를 우선 쓰는 것이 더 안정적입니다. `fetch_config.mode`에 `rss`를 주면 RSS entry를 따라가며 수집합니다.
+- 실제 smoke test 결과와 권장 pack 전략은 [docs/official-source-pack-notes.md](/Users/yejin/Documents/New project/docs/official-source-pack-notes.md:1)에 정리했습니다.
 ### 5. threshold 변수 설정
 ```python
 PRESENTATION_MODE=true

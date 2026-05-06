@@ -78,6 +78,54 @@ def test_grounding_score_penalizes_contradictions() -> None:
     assert grounded["reasons"]
 
 
+def test_grounding_score_rewards_reference_backed_claims() -> None:
+    reliability = score_issue(
+        [
+            Article(
+                id="1",
+                title="기사1",
+                source="Reuters",
+                published_at=datetime.utcnow(),
+                url="https://example.com/1",
+                content="정부가 반도체 지원 확대를 발표했다.",
+            ),
+            Article(
+                id="2",
+                title="기사2",
+                source="연합뉴스",
+                published_at=datetime.utcnow(),
+                url="https://example.com/2",
+                content="정부가 반도체 투자 확대 계획을 공개했다.",
+            ),
+        ],
+        [],
+    )
+    grounded = score_grounding(
+        [
+            {
+                "claim": "정부가 반도체 지원 확대를 발표했다.",
+                "score": 0.84,
+                "ready": True,
+                "contradiction_count": 0,
+                "reference_support_count": 1,
+                "contradiction_weight": 0.0,
+            },
+            {
+                "claim": "생산 투자 확대 계획이 공개됐다.",
+                "score": 0.78,
+                "ready": True,
+                "contradiction_count": 0,
+                "reference_support_count": 1,
+                "contradiction_weight": 0.0,
+            },
+        ],
+        reliability,
+    )
+
+    assert grounded["reference_grounded_ratio"] == 1.0
+    assert grounded["issue_score"] >= 0.7
+
+
 def test_grounding_uses_external_corpus_support() -> None:
     now = datetime.utcnow()
     group = [

@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from app.models import Article
+from app.models import Article, EvidenceSnippet
 from app.services.reliability import build_evidence, score_issue
 from app.services.summarizer import summarize_issue
 
@@ -85,3 +85,45 @@ def test_single_source_issue_is_held() -> None:
 
     assert status.value == "HOLD"
     assert "보류" in summary
+
+
+def test_reference_evidence_increases_reliability_components() -> None:
+    now = datetime.utcnow()
+    articles = [
+        Article(
+            id="1",
+            title="기준금리 동결 가능성",
+            source="Reuters",
+            published_at=now - timedelta(hours=1),
+            url="https://example.com/1",
+            content="시장에서는 기준금리 동결 가능성을 높게 보고 있다.",
+        ),
+        Article(
+            id="2",
+            title="환율과 수입물가 점검",
+            source="연합뉴스",
+            published_at=now - timedelta(hours=2),
+            url="https://example.com/2",
+            content="통화당국은 환율과 수입물가 흐름을 함께 점검하고 있다.",
+        ),
+    ]
+    evidence = [
+        EvidenceSnippet(article_id="1", source="Reuters", quote=articles[0].content, url=articles[0].url),
+        EvidenceSnippet(article_id="2", source="연합뉴스", quote=articles[1].content, url=articles[1].url),
+        EvidenceSnippet(
+            article_id="ref-1",
+            source="BOK Notes",
+            quote="기준금리 결정 시 환율과 수입물가 반응을 함께 점검해야 한다.",
+            url="https://example.com/ref",
+            evidence_type="reference",
+            source_id="bok-notes",
+            source_type="government",
+            authority_score=0.95,
+            freshness_score=0.92,
+        ),
+    ]
+
+    reliability = score_issue(articles, evidence)
+
+    assert reliability.reference_strength > 0.5
+    assert reliability.cross_source_confirmation > 0.7

@@ -149,7 +149,7 @@
       .project-stat-row {
         width: 100%;
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 8px;
         margin-top: 20px;
       }
@@ -524,6 +524,10 @@
         color: var(--muted);
         font-size: 0.72rem;
         line-height: 1.2;
+      }
+      .hero-stat-sub strong {
+        color: var(--ink);
+        font-weight: 800;
       }
 
       .summary-head {
@@ -2355,6 +2359,14 @@
               <div class="hero-stat-value">Hold {{ hold_threshold }}</div>
               <div class="hero-stat-sub">범위 {{ runtime_status.article_window_hours }}시간</div>
             </div>
+            <div class="hero-stat project-stat">
+              <div class="hero-stat-label">Reference</div>
+              <div class="hero-stat-value"><span id="reference-active-count">{{ runtime_status.reference_sources.active_count }}</span> active</div>
+              <div class="hero-stat-sub">
+                stale <strong id="reference-stale-count">{{ runtime_status.reference_sources.stale_count }}</strong>
+                · fail <strong id="reference-failing-count">{{ runtime_status.reference_sources.failing_count }}</strong>
+              </div>
+            </div>
           </div>
         </article>
 
@@ -2577,6 +2589,11 @@
                 </div>
 
                 <div class="block">
+                  <h3>Reference Source Health</h3>
+                  <div class="detail-list" id="detail-reference-health"></div>
+                </div>
+
+                <div class="block">
                   <h3>관련 기사</h3>
                   <div class="detail-list" id="detail-articles"></div>
                 </div>
@@ -2658,13 +2675,19 @@
         const issueScore = Number(grounding.issue_score ?? issue.reliability ?? 0);
         const groundedRatio = Number(grounding.grounded_ratio ?? 0);
         const contradictionRatio = Number(grounding.contradiction_ratio ?? 0);
+        const referenceGroundedRatio = Number(grounding.reference_grounded_ratio ?? 0);
+        const counterWeight = Number(grounding.counter_weight ?? 0);
         const externalSupportClaims = claims.filter((item) => Number(item.external_support_count || 0) > 0).length;
+        const referenceSupportClaims = claims.filter((item) => Number(item.reference_support_count || 0) > 0).length;
         const readyClaims = claims.filter((item) => item.ready).length;
         return {
           issueScore,
           groundedRatio,
           contradictionRatio,
+          referenceGroundedRatio,
+          counterWeight,
           externalSupportClaims,
+          referenceSupportClaims,
           readyClaims,
           totalClaims: claims.length,
           reasons: grounding.reasons || [],
@@ -3030,6 +3053,7 @@
         const keywords = document.getElementById("detail-keywords");
         const points = document.getElementById("detail-points");
         const risks = document.getElementById("detail-risks");
+        const referenceHealth = document.getElementById("detail-reference-health");
         const articles = document.getElementById("detail-articles");
         const impactGrid = document.getElementById("detail-impact-grid");
         const reliabilityBreakdown = document.getElementById("detail-reliability-breakdown");
@@ -3037,6 +3061,7 @@
         keywords.innerHTML = "";
         points.innerHTML = "";
         risks.innerHTML = "";
+        referenceHealth.innerHTML = "";
         articles.innerHTML = "";
         impactGrid.innerHTML = "";
         reliabilityBreakdown.innerHTML = "";
@@ -3045,6 +3070,7 @@
           ["신뢰 점수", grounding.issueScore.toFixed(2), grounding.issueScore >= 0.75 ? "impact-positive" : grounding.issueScore >= 0.6 ? "impact-mixed" : "impact-negative"],
           ["검증 상태", issue.grounded ? "Grounded" : "Review", issue.grounded ? "impact-positive" : "impact-mixed"],
           ["외부 근거", `${grounding.externalSupportClaims}개`, grounding.externalSupportClaims > 0 ? "impact-positive" : "impact-neutral"],
+          ["참조 근거", `${grounding.referenceSupportClaims}개`, grounding.referenceSupportClaims > 0 ? "impact-positive" : "impact-neutral"],
           ["시장 영향", issue.market_impact, `impact-${issue.market_impact}`],
           ["정책 리스크", issue.policy_risk, `risk-${issue.policy_risk}`],
           ["변동성", issue.volatility_risk, `risk-${issue.volatility_risk}`],
@@ -3061,9 +3087,12 @@
           ["검증", grounding.groundedRatio],
           ["상충", Math.max(0, 1 - grounding.contradictionRatio)],
           ["외부근거", grounding.totalClaims ? grounding.externalSupportClaims / grounding.totalClaims : 0],
+          ["참조근거", grounding.referenceGroundedRatio],
           ["claims", grounding.totalClaims ? grounding.readyClaims / grounding.totalClaims : 0],
           ["출처", breakdown.source_diversity],
           ["최신성", breakdown.recency],
+          ["참조강도", breakdown.reference_strength],
+          ["상충완화", Math.max(0, 1 - Number(breakdown.contradiction_penalty || 0))],
         ];
         recommendedRows.forEach(([label, value]) => {
           const safe = Math.max(0, Math.min(Number(value || 0), 1));
@@ -3107,6 +3136,25 @@
           appendSentenceLines(div, `[검증] ${item}`);
           risks.appendChild(div);
         });
+        const sourceHealth = runtimeData?.reference_sources || {};
+        const topSources = (sourceHealth.sources || []).slice(0, 5);
+        if (topSources.length) {
+          topSources.forEach((item) => {
+            const div = document.createElement("div");
+            div.className = "detail-item";
+            const failureText = (item.failures || []).length ? ` | ${item.failures[0]}` : "";
+            appendSentenceLines(
+              div,
+              `${item.name} · ${item.status}${item.stale ? " · stale" : ""} · docs ${item.document_count} · chunks ${item.chunk_count}${failureText}`,
+            );
+            referenceHealth.appendChild(div);
+          });
+        } else {
+          const div = document.createElement("div");
+          div.className = "detail-item";
+          appendSentenceLines(div, "활성 reference source 정보가 아직 없습니다.");
+          referenceHealth.appendChild(div);
+        }
         (issue.articles || []).forEach((article) => {
           const div = document.createElement("div");
           div.className = "detail-item";
@@ -3202,6 +3250,7 @@
         document.getElementById("detail-reliability-breakdown").innerHTML = "";
         document.getElementById("detail-points").innerHTML = "";
         document.getElementById("detail-risks").innerHTML = "";
+        document.getElementById("detail-reference-health").innerHTML = "";
         document.getElementById("detail-articles").innerHTML = "";
         document.getElementById("trend-title").textContent = "선택한 키워드 또는 이슈의 시간대별 기사 출현 추이를 보여줍니다.";
         document.getElementById("trend-meta").textContent = "최근 8개 시간 버킷 기준";
@@ -3374,6 +3423,10 @@
         document.getElementById("last-collect-at").textContent = data.latest_collect?.created_at_display ?? formatCompactDateTime(data.latest_collect?.created_at) ?? "없음";
         document.getElementById("next-collect-at").textContent = data.scheduler.collect_next_run_display ?? formatCompactDateTime(data.scheduler.collect_next_run_at) ?? "없음";
         document.getElementById("collect-remaining").textContent = formatRemaining(data.scheduler.collect_seconds_remaining);
+        document.getElementById("reference-active-count").textContent = data.reference_sources?.active_count ?? 0;
+        document.getElementById("reference-stale-count").textContent = data.reference_sources?.stale_count ?? 0;
+        document.getElementById("reference-failing-count").textContent = data.reference_sources?.failing_count ?? 0;
+        runtimeData = data || runtimeData;
         const collectChanged = (data.latest_collect?.created_at || "") !== latestCollectTimestamp;
         latestCollectTimestamp = data.latest_collect?.created_at || "";
         if ((data.latest_analyze?.created_at || "") !== latestAnalyzeTimestamp) {
@@ -3398,7 +3451,7 @@
       async function refreshDashboardData() {
         const response = await fetch("/api/dashboard-data");
         const data = await response.json();
-        issuesData = data.issues || [];
+        issuesData = data.issues?.items || data.issues || [];
         runtimeData = data.runtime_status || runtimeData;
         marketPulseData = data.market_pulse || marketPulseData;
         searchRankingsData = data.search_rankings || searchRankingsData;

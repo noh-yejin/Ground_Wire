@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime, timezone
 
 from app.models import AnalysisResult, Article, EvidenceSnippet, ImpactLabel, IssuePriority, ReliabilityScore, RiskLevel, SentimentLabel
 from app.repository import IssueRepository
@@ -29,7 +30,23 @@ def test_analyze_only_records_failed_job_run(tmp_path, monkeypatch):
     repository = IssueRepository(database_path=str(tmp_path / "pipeline.db"))
     pipeline = NewsPipeline(repository=repository)
 
-    monkeypatch.setattr(repository, "list_articles", lambda: load_sample_articles())
+    sample_articles = load_sample_articles()
+    monkeypatch.setattr(repository, "list_articles", lambda: sample_articles)
+    monkeypatch.setattr(pipeline_module, "_within_article_window", lambda items: items)
+    monkeypatch.setattr(pipeline_module, "_without_placeholder_links", lambda items: items)
+    monkeypatch.setattr(pipeline_module, "preprocess_articles", lambda items: items)
+    monkeypatch.setattr(
+        pipeline.retriever,
+        "retrieve",
+        lambda group: [
+            EvidenceSnippet(
+                article_id=group[0].id,
+                source=group[0].source,
+                quote=group[0].content,
+                url=group[0].url,
+            )
+        ],
+    )
 
     def boom(**_kwargs):
         raise RuntimeError("analysis exploded")
@@ -52,7 +69,7 @@ def test_analyze_only_parallelizes_multiple_groups(tmp_path, monkeypatch):
         id="1",
         title="반도체 투자 확대",
         source="연합뉴스",
-        published_at=load_sample_articles()[0].published_at,
+        published_at=datetime.now(timezone.utc),
         url="https://example.com/1",
         content="정부가 반도체 투자 확대 계획을 공개했다.",
     )
@@ -60,12 +77,14 @@ def test_analyze_only_parallelizes_multiple_groups(tmp_path, monkeypatch):
         id="2",
         title="금리 인하 기대 약화",
         source="Reuters",
-        published_at=load_sample_articles()[0].published_at,
+        published_at=datetime.now(timezone.utc),
         url="https://example.com/2",
         content="미국 CPI 발표 이후 금리 인하 기대가 약화됐다.",
     )
 
     monkeypatch.setattr(repository, "list_articles", lambda: [article_one, article_two])
+    monkeypatch.setattr(pipeline_module, "_within_article_window", lambda items: items)
+    monkeypatch.setattr(pipeline_module, "_without_placeholder_links", lambda items: items)
     monkeypatch.setattr(pipeline_module, "preprocess_articles", lambda items: items)
     monkeypatch.setattr(pipeline_module, "cluster_articles", lambda _articles: [[article_one], [article_two]])
     monkeypatch.setattr(
@@ -182,6 +201,7 @@ def test_analyze_group_uses_lightweight_hold_path(tmp_path, monkeypatch):
         "score_issue",
         lambda *_args, **_kwargs: ReliabilityScore(0.52, 0.5, 0.8, 0.5, 0.5),
     )
+    monkeypatch.setattr(pipeline_module.settings, "min_articles_per_issue", 2)
     monkeypatch.setattr(pipeline_module, "_derive_topic", lambda _group: "물가 · 둔화")
     monkeypatch.setattr(pipeline_module, "_build_hold_reason", lambda *_args, **_kwargs: "기사 수 부족: 1건")
 

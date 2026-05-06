@@ -19,7 +19,7 @@ from app.models import (
 from app.services.clustering import _extract_keywords
 from app.services.rag import EvidenceRetriever
 from app.services.reliability import score_grounding
-from app.services.source_normalizer import is_trusted_ready_source, normalize_source_name
+from app.services.source_normalizer import is_trusted_ready_source, normalize_source_name, source_weight
 
 try:
     from openai import OpenAI
@@ -30,7 +30,37 @@ logger = logging.getLogger(__name__)
 
 NEGATIVE_HINTS = ("위험", "후퇴", "둔화", "긴축", "변동성", "제재")
 POSITIVE_HINTS = ("증가", "개선", "회복", "확대", "기대", "성장")
-CONTRADICTION_HINTS = ("아니다", "부인", "반박", "정정", "철회", "논란", "상충", "사실무근", "불확실")
+CONTRADICTION_HINTS = (
+    "아니다",
+    "부인",
+    "반박",
+    "정정",
+    "철회",
+    "논란",
+    "상충",
+    "사실무근",
+    "불확실",
+    "해명",
+    "번복",
+    "오보",
+    "정정보도",
+    "부정",
+    "아닌",
+    "clarified",
+    "clarification",
+    "denied",
+    "deny",
+    "refuted",
+    "refute",
+    "revised",
+    "revision",
+    "withdrawn",
+    "withdraw",
+    "correction",
+    "not true",
+    "no plan",
+    "not considering",
+)
 
 
 class IssueAnalysisSchema(BaseModel):
@@ -77,10 +107,10 @@ class LLMAnalyzer:
     Falls back to deterministic local analysis when no API key is available.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, retriever: EvidenceRetriever | None = None) -> None:
         self.last_remote_error: str | None = None
         self.last_remote_success: bool = False
-        self.retriever = EvidenceRetriever()
+        self.retriever = retriever or EvidenceRetriever()
         self.client = OpenAI(api_key=settings.openai_api_key, timeout=settings.llm_timeout_seconds, max_retries=0) if (
             settings.openai_api_key and OpenAI is not None
         ) else None
@@ -611,6 +641,13 @@ class LLMAnalyzer:
         verification_scores: list[float] = []
         local_support_count = 0
         external_support_count = 0
+        reference_support_count = 0
+        authoritative_reference_count = 0
+        support_strength_total = 0.0
+        reference_support_score = 0.0
+        contradiction_weight = 0.0
+        counter_update_count = 0
+        supportive_freshness_scores: list[float] = []
 
         cluster_ids = {article.id for article in articles}
         support_pool = self._merge_evidence_lists(support_evidence, external_evidence)
@@ -618,12 +655,21 @@ class LLMAnalyzer:
         for item in support_pool:
             verification = self._classify_claim_with_grounding(claim, item)
             label = verification["label"]
-            trusted = is_trusted_ready_source(item.source)
+            trusted = self._is_trusted_evidence(item)
             if label != "insufficient":
                 verification_scores.append(float(verification["score"]))
             if label in {"support", "partial_support"}:
                 support_count += 1
-                if item.article_id in cluster_ids:
+                trust_weight = self._evidence_trust_weight(item)
+                support_weight = max(float(verification["score"]) * trust_weight, 0.0)
+                support_strength_total += support_weight
+                supportive_freshness_scores.append(float(item.freshness_score or 0.45))
+                if item.evidence_type == "reference":
+                    reference_support_count += 1
+                    reference_support_score += support_weight
+                    if (item.authority_score or 0.0) >= 0.84:
+                        authoritative_reference_count += 1
+                elif item.article_id in cluster_ids:
                     local_support_count += 1
                 else:
                     external_support_count += 1
@@ -639,10 +685,20 @@ class LLMAnalyzer:
                     "verification_label": label,
                     "verification_score": round(float(verification["score"]), 3),
                     "trusted_source": trusted,
+                    "evidence_type": item.evidence_type,
+                    "source_type": item.source_type,
+                    "source_id": item.source_id,
+                    "authority_score": round(float(item.authority_score or 0.0), 3) if item.authority_score is not None else None,
+                    "freshness_score": round(float(item.freshness_score or 0.0), 3) if item.freshness_score is not None else None,
+                    "contradiction_hint": bool(item.contradiction_hint),
                     "entity_match_score": verification["entity_match_score"],
                     "number_match_score": verification["number_match_score"],
                     "matched_entities": verification["matched_entities"],
-                    "scope": "local" if item.article_id in cluster_ids else "external",
+                    "scope": (
+                        "reference"
+                        if item.evidence_type == "reference"
+                        else ("local" if item.article_id in cluster_ids else "external")
+                    ),
                     "rationale": verification["rationale"],
                 }
             )
@@ -653,6 +709,10 @@ class LLMAnalyzer:
             if not contradicted:
                 continue
             contradiction_count += 1
+            weight = self._contradiction_weight(item, verification)
+            contradiction_weight += weight
+            if item.contradiction_hint:
+                counter_update_count += 1
             evidence_rows.append(
                 {
                     "article_id": item.article_id,
@@ -662,7 +722,14 @@ class LLMAnalyzer:
                     "retrieval_score": round(item.score, 3),
                     "verification_label": "contradict",
                     "verification_score": round(float(verification["score"]), 3),
-                    "trusted_source": is_trusted_ready_source(item.source),
+                    "trusted_source": self._is_trusted_evidence(item),
+                    "evidence_type": item.evidence_type,
+                    "source_type": item.source_type,
+                    "source_id": item.source_id,
+                    "authority_score": round(float(item.authority_score or 0.0), 3) if item.authority_score is not None else None,
+                    "freshness_score": round(float(item.freshness_score or 0.0), 3) if item.freshness_score is not None else None,
+                    "contradiction_hint": bool(item.contradiction_hint),
+                    "contradiction_weight": round(weight, 3),
                     "entity_match_score": verification["entity_match_score"],
                     "number_match_score": verification["number_match_score"],
                     "matched_entities": verification["matched_entities"],
@@ -672,14 +739,29 @@ class LLMAnalyzer:
             )
 
         avg_verification = sum(verification_scores) / max(len(verification_scores), 1)
-        external_diversity_bonus = min(external_support_count / 2, 1.0)
+        support_strength = min(support_strength_total / 2.1, 1.0)
+        reference_strength = min(reference_support_score / 1.25, 1.0)
+        freshness_alignment = (
+            sum(supportive_freshness_scores) / len(supportive_freshness_scores)
+            if supportive_freshness_scores
+            else 0.0
+        )
+        corpus_mix_bonus = 0.0
+        if local_support_count and external_support_count:
+            corpus_mix_bonus += 0.08
+        if reference_support_count:
+            corpus_mix_bonus += 0.12
+        if authoritative_reference_count:
+            corpus_mix_bonus += 0.08
         score = (
-            min(support_count / 3, 1.0) * 0.36
-            + min(trusted_support_count / 2, 1.0) * 0.30
-            + avg_verification * 0.18
-            + external_diversity_bonus * 0.10
-            + min(len(claim.split()) / 12, 1.0) * 0.06
-            - min(contradiction_count * 0.22, 0.44)
+            support_strength * 0.36
+            + min(trusted_support_count / 2, 1.0) * 0.24
+            + reference_strength * 0.12
+            + avg_verification * 0.10
+            + min(corpus_mix_bonus, 0.08)
+            + freshness_alignment * 0.08
+            + min(len(claim.split()) / 12, 1.0) * 0.05
+            - min(contradiction_weight * 0.55, 0.62)
         )
         score = round(max(0.0, min(score, 1.0)), 3)
         return {
@@ -687,15 +769,22 @@ class LLMAnalyzer:
             "support_count": support_count,
             "trusted_support_count": trusted_support_count,
             "contradiction_count": contradiction_count,
+            "contradiction_weight": round(contradiction_weight, 3),
             "local_support_count": local_support_count,
             "external_support_count": external_support_count,
+            "reference_support_count": reference_support_count,
+            "authoritative_reference_count": authoritative_reference_count,
+            "reference_support_score": round(reference_support_score, 3),
+            "support_strength": round(support_strength, 3),
+            "freshness_alignment": round(freshness_alignment, 3),
+            "counter_update_count": counter_update_count,
             "score": score,
             "ready": (
                 support_count >= 2
                 and trusted_support_count >= 1
-                and contradiction_count == 0
-                and score >= 0.72
-                and (external_support_count >= 1 or local_support_count >= 2)
+                and contradiction_weight < 0.28
+                and score >= 0.70
+                and (reference_support_count >= 1 or external_support_count >= 1 or local_support_count >= 2)
             ),
             "evidence": evidence_rows[:6],
         }
@@ -738,6 +827,27 @@ class LLMAnalyzer:
             "omitted_claims": [item["claim"] for item in claim_results[:4]],
         }
 
+    def _is_trusted_evidence(self, evidence: EvidenceSnippet) -> bool:
+        if evidence.evidence_type == "reference":
+            return (evidence.authority_score or 0.0) >= 0.78
+        return is_trusted_ready_source(evidence.source)
+
+    def _evidence_trust_weight(self, evidence: EvidenceSnippet) -> float:
+        if evidence.evidence_type == "reference":
+            authority = evidence.authority_score or 0.76
+            freshness = evidence.freshness_score or 0.45
+            return min((authority * 0.75) + (freshness * 0.25), 1.0)
+        return min((source_weight(evidence.source) * 0.8) + ((evidence.freshness_score or 0.4) * 0.2), 1.0)
+
+    def _contradiction_weight(self, evidence: EvidenceSnippet, verification: dict) -> float:
+        trust = self._evidence_trust_weight(evidence)
+        freshness = float(evidence.freshness_score or 0.45)
+        contradiction_signal = float(verification.get("contradiction_signal_score", 0.0))
+        weight = (float(verification.get("score", 0.0)) * 0.42) + (trust * 0.28) + (freshness * 0.18) + (contradiction_signal * 0.12)
+        if evidence.contradiction_hint:
+            weight += 0.08
+        return round(min(max(weight, 0.0), 1.0), 3)
+
     def _classify_claim_with_grounding(
         self,
         claim: str,
@@ -747,12 +857,16 @@ class LLMAnalyzer:
         overlap = _token_overlap_score(claim, evidence.quote)
         entity_match = _entity_match_score(claim, evidence.quote)
         number_match = _number_match_score(claim, evidence.quote)
+        contradiction_signal = _contradiction_signal_score(evidence.quote, evidence.title)
         heuristic_score = round(overlap * 0.45 + entity_match * 0.35 + number_match * 0.20, 3)
         heuristic_label = _heuristic_verification_label(
             heuristic_score=heuristic_score,
             overlap=overlap,
+            entity_match=entity_match,
+            number_match=number_match,
             contradiction_mode=contradiction_mode,
             quote=evidence.quote,
+            contradiction_signal=contradiction_signal,
         )
 
         if self.client is not None and settings.enable_llm_claim_verification:
@@ -770,6 +884,7 @@ class LLMAnalyzer:
                     "score": merged_score,
                     "entity_match_score": entity_match,
                     "number_match_score": number_match,
+                    "contradiction_signal_score": contradiction_signal,
                     "matched_entities": llm_result["matched_entities"] or _matched_entities(claim, evidence.quote),
                     "rationale": llm_result["rationale"],
                 }
@@ -779,6 +894,7 @@ class LLMAnalyzer:
             "score": heuristic_score,
             "entity_match_score": entity_match,
             "number_match_score": number_match,
+            "contradiction_signal_score": contradiction_signal,
             "matched_entities": _matched_entities(claim, evidence.quote),
             "rationale": "휴리스틱 grounding 판정",
         }
@@ -1319,12 +1435,19 @@ def _heuristic_verification_label(
     *,
     heuristic_score: float,
     overlap: float,
+    entity_match: float,
+    number_match: float,
     contradiction_mode: bool,
     quote: str,
+    contradiction_signal: float,
 ) -> str:
     lowered = quote.lower()
     if contradiction_mode:
-        if overlap >= 0.18 and any(token in lowered for token in CONTRADICTION_HINTS):
+        if (
+            contradiction_signal >= 0.32
+            and overlap >= 0.12
+            and (entity_match >= 0.2 or number_match >= 0.5 or any(token in lowered for token in CONTRADICTION_HINTS))
+        ):
             return "contradict"
         return "insufficient"
     if heuristic_score >= 0.72:
@@ -1332,3 +1455,11 @@ def _heuristic_verification_label(
     if heuristic_score >= 0.42 or overlap >= 0.2:
         return "partial_support"
     return "insufficient"
+
+
+def _contradiction_signal_score(quote: str, title: str | None = None) -> float:
+    lowered = f"{title or ''} {quote}".lower()
+    matched = sum(1 for token in CONTRADICTION_HINTS if token in lowered)
+    if matched == 0:
+        return 0.0
+    return round(min(0.22 + matched * 0.14, 1.0), 3)

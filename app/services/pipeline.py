@@ -16,6 +16,7 @@ from app.services.crawling import is_google_news_url
 from app.services.llm_analyzer import LLMAnalyzer
 from app.services.preprocessing import preprocess_articles
 from app.services.rag import EvidenceRetriever
+from app.services.reference_ingestion import ReferenceCorpusIngestor
 from app.services.reliability import score_issue
 from app.services.source_normalizer import is_trusted_ready_source
 
@@ -26,8 +27,9 @@ class NewsPipeline:
     def __init__(self, repository: IssueRepository | None = None) -> None:
         self.repository = repository or IssueRepository()
         self.collector = NewsCollector(repository=self.repository)
-        self.retriever = EvidenceRetriever()
-        self.analyzer = LLMAnalyzer()
+        self.retriever = EvidenceRetriever(repository=self.repository)
+        self.reference_ingestor = ReferenceCorpusIngestor(repository=self.repository)
+        self.analyzer = LLMAnalyzer(retriever=self.retriever)
 
     def collect_only(self) -> list[str]:
         try:
@@ -48,6 +50,7 @@ class NewsPipeline:
 
     def analyze_only(self) -> list[Issue]:
         try:
+            self.reference_ingestor.ingest()
             articles = preprocess_articles(
                 _without_placeholder_links(_within_article_window(self.repository.list_articles()))
             )
