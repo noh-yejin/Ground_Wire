@@ -8,6 +8,7 @@ from app.models import Article
 
 TOKEN_PATTERN = re.compile(r"[A-Za-z0-9가-힣]{2,}")
 NUMBER_PATTERN = re.compile(r"\d+(?:[.,]\d+)?(?:%|년|개월|월|일|원|달러|bp)?")
+ENTITY_PATTERN = re.compile(r"[A-Z][A-Za-z&.-]{1,}|[가-힣]{2,}|\d+(?:\.\d+)?%?")
 STOPWORDS = {
     "the",
     "and",
@@ -84,6 +85,47 @@ DISPLAY_ALIASES = {
     "earnings": "실적",
     "tsmc": "TSMC",
     "nvidia": "엔비디아",
+    "lpr": "금리",
+    "cpi": "물가",
+    "fomc": "연준",
+    "rate": "금리",
+    "rates": "금리",
+    "cut": "인하",
+    "cuts": "인하",
+    "hike": "인상",
+    "hikes": "인상",
+    "inflation": "물가",
+    "price": "물가",
+    "prices": "물가",
+    "earnings": "실적",
+    "guidance": "가이던스",
+    "export": "수출",
+    "exports": "수출",
+}
+
+SEMANTIC_ALIASES = {
+    "lpr": "금리",
+    "금리인하": "금리 인하",
+    "ratecut": "금리 인하",
+    "ratecuts": "금리 인하",
+    "rate": "금리",
+    "rates": "금리",
+    "cut": "인하",
+    "cuts": "인하",
+    "hike": "인상",
+    "hikes": "인상",
+    "cpi": "물가",
+    "inflation": "물가",
+    "price": "물가",
+    "prices": "물가",
+    "fed": "연준",
+    "fomc": "연준",
+    "semiconductor": "반도체",
+    "chip": "반도체",
+    "chips": "반도체",
+    "memory": "메모리",
+    "exports": "수출",
+    "earnings": "실적",
 }
 
 GENERIC_TOPIC_TOKENS = {
@@ -124,6 +166,9 @@ def cluster_articles(articles: list[Article]) -> list[list[Article]]:
         title_tokens = set(_extract_keywords(article.title)[:6])
         salient_title_tokens = set(_extract_salient_tokens(article.title))
         number_tokens = set(_extract_numbers(article.title + " " + article.content))
+        concept_tokens = set(_extract_concepts(article.title + " " + article.content))
+        entity_tokens = set(_extract_entities(article.title + " " + article.content))
+        title_ngrams = _char_ngrams(_normalize_text_for_similarity(article.title))
         matched_cluster: dict[str, object] | None = None
 
         for cluster in clusters:
@@ -131,6 +176,10 @@ def cluster_articles(articles: list[Article]) -> list[list[Article]]:
             title_overlap = len(title_tokens & cluster["title_tokens"])
             salient_title_overlap = len(salient_title_tokens & cluster["salient_title_tokens"])
             similarity = overlap / max(len(tokens | cluster["tokens"]), 1)
+            concept_overlap = len(concept_tokens & cluster["concept_tokens"])
+            concept_similarity = concept_overlap / max(len(concept_tokens | cluster["concept_tokens"]), 1)
+            entity_overlap = len(entity_tokens & cluster["entity_tokens"])
+            title_ngram_similarity = _set_similarity(title_ngrams, cluster["title_ngrams"])
             number_compatible = _numbers_compatible(number_tokens, cluster["number_tokens"])
             time_compatible = _cluster_time_compatible(article.published_at, cluster["published_range"])
             if _should_merge_cluster(
@@ -138,6 +187,10 @@ def cluster_articles(articles: list[Article]) -> list[list[Article]]:
                 title_overlap=title_overlap,
                 salient_title_overlap=salient_title_overlap,
                 similarity=similarity,
+                concept_overlap=concept_overlap,
+                concept_similarity=concept_similarity,
+                entity_overlap=entity_overlap,
+                title_ngram_similarity=title_ngram_similarity,
                 number_compatible=number_compatible,
                 time_compatible=time_compatible,
             ):
@@ -151,6 +204,9 @@ def cluster_articles(articles: list[Article]) -> list[list[Article]]:
                     "title_tokens": set(title_tokens),
                     "salient_title_tokens": set(salient_title_tokens),
                     "number_tokens": set(number_tokens),
+                    "concept_tokens": set(concept_tokens),
+                    "entity_tokens": set(entity_tokens),
+                    "title_ngrams": set(title_ngrams),
                     "published_range": _published_range(article.published_at, article.published_at),
                     "articles": [article],
                 }
@@ -162,6 +218,9 @@ def cluster_articles(articles: list[Article]) -> list[list[Article]]:
         matched_cluster["title_tokens"].update(title_tokens)
         matched_cluster["salient_title_tokens"].update(salient_title_tokens)
         matched_cluster["number_tokens"].update(number_tokens)
+        matched_cluster["concept_tokens"].update(concept_tokens)
+        matched_cluster["entity_tokens"].update(entity_tokens)
+        matched_cluster["title_ngrams"].update(title_ngrams)
         matched_cluster["published_range"] = _published_range_extend(matched_cluster["published_range"], article.published_at)
 
     return [cluster["articles"] for cluster in clusters]
@@ -238,6 +297,56 @@ def _extract_salient_tokens(text: str) -> list[str]:
     return [token for token in _extract_keywords(text) if token not in GENERIC_TOPIC_TOKENS][:5]
 
 
+def _extract_concepts(text: str) -> list[str]:
+    concepts: list[str] = []
+    for token in _extract_keywords(text):
+        normalized = _normalize_concept_token(token)
+        if not normalized or normalized in GENERIC_TOPIC_TOKENS:
+            continue
+        if normalized not in concepts:
+            concepts.append(normalized)
+    return concepts[:10]
+
+
+def _normalize_concept_token(token: str) -> str:
+    lowered = token.lower().strip()
+    if not lowered:
+        return ""
+    lowered = re.sub(r"(ing|ed|es|s)$", "", lowered) if lowered.isascii() else lowered
+    return SEMANTIC_ALIASES.get(lowered, DISPLAY_ALIASES.get(lowered, lowered))
+
+
+def _extract_entities(text: str) -> list[str]:
+    entities: list[str] = []
+    for token in ENTITY_PATTERN.findall(text):
+        normalized = _normalize_concept_token(token)
+        if len(normalized) < 2 or normalized in STOPWORDS or normalized in GENERIC_TOPIC_TOKENS:
+            continue
+        if normalized not in entities:
+            entities.append(normalized)
+    return entities[:12]
+
+
+def _normalize_text_for_similarity(text: str) -> str:
+    concepts = _extract_concepts(text)
+    if concepts:
+        return " ".join(concepts)
+    return " ".join(_extract_keywords(text))
+
+
+def _char_ngrams(text: str, n: int = 3) -> set[str]:
+    compact = re.sub(r"\s+", "", text.lower())
+    if len(compact) < n:
+        return {compact} if compact else set()
+    return {compact[index:index + n] for index in range(len(compact) - n + 1)}
+
+
+def _set_similarity(left: set[str], right: set[str]) -> float:
+    if not left or not right:
+        return 0.0
+    return len(left & right) / max(len(left | right), 1)
+
+
 def _numbers_compatible(left: set[str], right: set[str]) -> bool:
     if not left or not right:
         return True
@@ -270,6 +379,10 @@ def _should_merge_cluster(
     title_overlap: int,
     salient_title_overlap: int,
     similarity: float,
+    concept_overlap: int,
+    concept_similarity: float,
+    entity_overlap: int,
+    title_ngram_similarity: float,
     number_compatible: bool,
     time_compatible: bool,
 ) -> bool:
@@ -282,5 +395,11 @@ def _should_merge_cluster(
     if salient_title_overlap >= 1 and overlap >= 3 and similarity >= 0.22:
         return True
     if title_overlap >= 2 and overlap >= 4 and similarity >= 0.35:
+        return True
+    if entity_overlap >= 2 and concept_overlap >= 2 and concept_similarity >= 0.3:
+        return True
+    if entity_overlap >= 1 and concept_overlap >= 3 and concept_similarity >= 0.42:
+        return True
+    if title_ngram_similarity >= 0.42 and concept_overlap >= 2:
         return True
     return False

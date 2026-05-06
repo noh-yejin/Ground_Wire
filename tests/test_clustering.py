@@ -130,3 +130,55 @@ def test_cluster_articles_respects_large_time_gap() -> None:
     clusters = cluster_articles(articles)
 
     assert len(clusters) == 2
+
+
+def test_cluster_articles_merges_semantic_macro_paraphrases() -> None:
+    now = datetime.utcnow()
+    articles = [
+        Article(
+            id="1",
+            title="미 CPI 발표 이후 금리 인하 기대 약화",
+            source="Reuters",
+            published_at=now,
+            url="https://example.com/1",
+            content="미국 CPI 발표 이후 시장의 금리 인하 기대가 약화됐고 연준의 정책 전환 시점이 늦춰질 수 있다는 분석이 나왔다.",
+        ),
+        Article(
+            id="2",
+            title="월가, CPI 이후 연준 금리 인하 시점 재조정",
+            source="연합뉴스",
+            published_at=now + timedelta(hours=1),
+            url="https://example.com/2",
+            content="월가는 CPI 발표 뒤 연준의 금리 인하 시점이 늦춰질 수 있다고 봤고 물가 압력이 여전히 남아 있다고 평가했다.",
+        ),
+    ]
+
+    clusters = cluster_articles(articles)
+
+    assert len(clusters) == 1
+
+
+def test_cluster_articles_does_not_merge_only_broad_macro_overlap() -> None:
+    now = datetime.utcnow()
+    articles = [
+        Article(
+            id="1",
+            title="미 CPI 발표 이후 금리 인하 기대 약화",
+            source="Reuters",
+            published_at=now,
+            url="https://example.com/1",
+            content="미국 CPI 발표 이후 시장의 금리 인하 기대가 약화됐다.",
+        ),
+        Article(
+            id="2",
+            title="중국 LPR 동결에도 대출 수요 회복 지연",
+            source="연합뉴스",
+            published_at=now,
+            url="https://example.com/2",
+            content="중국은 사실상 기준금리 역할을 하는 LPR을 동결했지만 대출 수요 회복은 여전히 더딘 상황이다.",
+        ),
+    ]
+
+    clusters = cluster_articles(articles)
+
+    assert len(clusters) == 2
