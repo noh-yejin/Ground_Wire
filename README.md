@@ -1,11 +1,9 @@
 # 📑 GroundWire
 ### **Reliability-based News Issue Analysis Dashboard**
 
-GroundWire는 실시간 뉴스 데이터를 기반으로, **검토 가능한 이슈만 선별해 구조화하는 분석 대시보드**입니다.
+GroundWire는 실시간 뉴스 스트림과 외부 reference corpus를 함께 활용해, 검증 가능한 이슈만 READY로 승격하는 **신뢰도 중심 이슈 모니터링 시스템**입니다.
 
-
-**근거 기반 검증 + 신뢰도 평가 + LLM 분석**을 통해 이슈를 `READY` / `HOLD` 상태로 분류합니다.  
-
+뉴스 기사 간 교차 확인, 외부 문서 기반 근거 검색, 상충 근거 탐지, reference-aware scoring을 통해 사람이 검토할 가치가 있는 이슈만 선별합니다.
 
 ## 📊 Demo
 
@@ -51,26 +49,24 @@ GroundWire는 실시간 뉴스 데이터를 기반으로, **검토 가능한 이
 
 ## 🚀 핵심 기능
 
-- 실시간 RSS 기반 뉴스 수집
-- 기사 정제 및 저품질 / 중복 제거
-- 유사 기사 클러스터링 → 이슈 단위 분석
-- **RAG 기반 근거(evidence) 수집**
-- **외부 reference corpus 기반 RAG 확장**
-- **신뢰도 기반 필터링**
-- **LLM + grounding 기반 분석**
+- 실시간 RSS 기반 뉴스 수집 및 전처리
+- 유사 기사 클러스터링을 통한 이슈 분석
+- 뉴스 코퍼스와 reference corpus를 분리한 하이브리드 retrieval
+- 외부 문서 기반 근거 검색 및 evidence provenance 추적
+- reference-aware scoring을 통한 신뢰도 계산
+- 정정, 반박, 철회, 해명성 문서를 반영하는 contradiction handling
 - `READY` / `HOLD` 판정
-- 웹 대시보드 시각화  
   
 
 ## 🔄 데이터 플로우
 
-RSS 수집 → 전처리 → 원문 URL 복원 → 기사 저장  
+뉴스 수집 → 기사 정제 및 클러스터링 → reference source 동기화 → claim 추출 
 
-→ 이슈 클러스터링 → RAG 기반 근거 수집  
+→ 뉴스 근거 검색 → reference 근거 검색 → 반박/정정 근거 검색 
 
-→ 신뢰도 / grounding 분석 → READY / HOLD 판정  
+→ reference-aware scoring → READY / HOLD 판정 
 
-→ 대시보드 반영  
+→ 대시보드 반영
 
 
 ## ⚙️ 실행 방법
@@ -95,15 +91,7 @@ pip install -r requirements.txt
 OPENAI_API_KEY=your_api_key_here
 OPENAI_MODEL=model_here
 EMBEDDING_MODEL=embedding_model_here
-REFERENCE_DOCS_PATH=reference_docs
-REFERENCE_FETCH_TIMEOUT_SECONDS=10
 ```
-- `reference_docs/` 폴더에는 정책문서, IR 메모, 내부 리서치 문서 같은 참조 문서를 둘 수 있습니다.
-- `reference_docs/sources.json` 파일을 만들면 reference source의 종류와 authority score를 등록할 수 있습니다.
-- `seed_urls`를 등록하면 분석 전에 외부 문서를 자동으로 fetch해서 reference corpus에 반영합니다.
-- `fetch_config`로 `respect_robots`, `content_selectors`, `remove_selectors`, `title_selectors`를 source별로 조정할 수 있습니다.
-- 가능한 기관은 일반 HTML 페이지보다 공식 RSS를 우선 쓰는 것이 더 안정적입니다. `fetch_config.mode`에 `rss`를 주면 RSS entry를 따라가며 수집합니다.
-- 실제 smoke test 결과와 권장 pack 전략은 [docs/official-source-pack-notes.md](/Users/yejin/Documents/New project/docs/official-source-pack-notes.md:1)에 정리했습니다.
 ### 5. threshold 변수 설정
 ```python
 PRESENTATION_MODE=true
